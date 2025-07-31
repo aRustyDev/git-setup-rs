@@ -1,0 +1,20 @@
+pub mod cli;
+pub mod commands;
+pub mod config;
+pub mod detection;
+pub mod error;
+pub mod external;
+pub mod matching;
+pub mod output;
+pub mod platform;
+pub mod profile;
+pub mod tui;
+
+pub use cli::{Args, OutputFormat};
+pub use detection::{AutoDetector, DetectionConfig, DetectionResult, ProfileDetector, RepositoryContext};
+pub use error::{GitSetupError, Result};
+pub use matching::{FuzzyMatcher, ProfileFuzzyMatcher, MatchResult, MatchedField, FieldMatch, MatchingAlgorithm};
+pub use output::{JsonFormatter, OutputFormatter};
+pub use platform::{PlatformPaths, SystemPlatform};
+pub use profile::{ProfileManager as ProfileManagerTrait, manager::ProfileManagerImpl};
+pub use tui::{App, TuiApp, Theme};

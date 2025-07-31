@@ -1,0 +1,457 @@
+{
+  "phase": {
+    "number": 1,
+    "title": "Foundation & Security"
+  },
+  "prerequisites": {
+    "intro_narrative": "This is the first phase. Ensure you have the spec and development environment ready.",
+    "completed_phases": null,
+    "knowledge_areas": [
+      {
+        "area": "Domain Knowledge",
+        "description": "Understanding of Foundation & Security concepts",
+        "importance": "critical"
+      },
+      {
+        "area": "Technical Skills",
+        "description": "Proficiency in required technologies",
+        "importance": "required"
+      }
+    ]
+  },
+  "resources": {
+    "intro_narrative": "Keep these resources handy throughout the phase.",
+    "example_files": [
+      {
+        "name": "Example Implementation",
+        "path": "examples/phase-1-example.md",
+        "description": "Reference implementation",
+        "purpose": "Shows best practices"
+      }
+    ],
+    "specifications": [
+      {
+        "name": "Project Spec",
+        "path": "spec/SPEC.md",
+        "description": "Complete project specification",
+        "key_sections": [
+          "Requirements",
+          "Architecture",
+          "Success Metrics"
+        ]
+      }
+    ],
+    "junior_dev_guides": [
+      {
+        "name": "Getting Started Guide",
+        "path": "guides/getting-started.md",
+        "description": "New developer onboarding",
+        "when_to_read": "Before starting any implementation"
+      }
+    ],
+    "quick_links": [
+      {
+        "name": "Run Tests",
+        "command": "npm test",
+        "purpose": "Verify your implementation"
+      }
+    ]
+  },
+  "overview": {
+    "narrative": "Phase 1 focuses on Foundation & Security. This phase will deliver Complete Foundation & Security.",
+    "checkpoint_summary": "3 checkpoints aligned with major deliverables",
+    "time_estimate": "2 weeks"
+  },
+  "methodology": {
+    "approach": "Test-Driven Development (TDD)",
+    "importance_narrative": "Every feature must have tests written FIRST",
+    "rules": [
+      {
+        "step": "Write failing tests",
+        "description": "Define expected behavior before implementation",
+        "rationale": "Ensures we build exactly what's needed"
+      },
+      {
+        "step": "Implement minimum code",
+        "description": "Write just enough code to make tests pass",
+        "rationale": "Prevents over-engineering"
+      },
+      {
+        "step": "Refactor",
+        "description": "Clean up code while keeping tests green",
+        "rationale": "Maintains code quality"
+      }
+    ]
+  },
+  "done_criteria": {
+    "intro_narrative": "This phase is complete when ALL criteria are met:",
+    "checklist": [
+      {
+        "criterion": "All requirements implemented",
+        "verification_method": "Requirements NFR-002 fully functional"
+      },
+      {
+        "criterion": "Test coverage \u2265 80%",
+        "verification_method": "Coverage report shows 80%+ for new code"
+      },
+      {
+        "criterion": "Documentation complete",
+        "verification_method": "API docs, user guides, and inline comments present"
+      },
+      {
+        "criterion": "All checkpoints reviewed",
+        "verification_method": "Review feedback addressed and approved"
+      }
+    ]
+  },
+  "work_breakdown": [
+    {
+      "section_number": "1.1",
+      "title": "Core Foundation & Security Implementation",
+      "work_unit_context": {
+        "complexity": "High",
+        "complexity_reason": "Requires careful design and testing",
+        "scope": {
+          "estimated_lines": "500-1000 lines",
+          "file_count": "5-10 files"
+        },
+        "key_components": [
+          {
+            "name": "Core Foundation & Security Implementation Module",
+            "estimated_lines": "200-400 lines",
+            "purpose": "Core implementation"
+          },
+          {
+            "name": "Tests",
+            "estimated_lines": "300-500 lines",
+            "purpose": "Comprehensive test coverage"
+          }
+        ]
+      },
+      "tasks": [
+        {
+          "number": "1.1.1",
+          "title": "Core Foundation & Security Implementation Tests",
+          "description": "Write comprehensive tests for Core Foundation & Security Implementation",
+          "tdd_instructions": "Start with unit tests for core functionality",
+          "tips": [
+            {
+              "type": "junior_dev",
+              "content": "Review existing patterns before starting",
+              "resource_link": "guides/coding-standards.md"
+            }
+          ]
+        },
+        {
+          "number": "1.2.2",
+          "title": "Core Foundation & Security Implementation Implementation",
+          "description": "Implement Core Foundation & Security Implementation to pass all tests",
+          "tdd_instructions": "Implement only what's needed to make tests pass",
+          "tips": [
+            {
+              "type": "junior_dev",
+              "content": "Review existing patterns before starting",
+              "resource_link": "guides/coding-standards.md"
+            }
+          ]
+        },
+        {
+          "number": "1.3.3",
+          "title": "Core Foundation & Security Implementation Integration",
+          "description": "Integrate Core Foundation & Security Implementation with existing system",
+          "tdd_instructions": "Write integration tests first",
+          "tips": [
+            {
+              "type": "junior_dev",
+              "content": "Review existing patterns before starting",
+              "resource_link": "guides/coding-standards.md"
+            }
+          ]
+        }
+      ],
+      "checkpoint": {
+        "stop_message": "CHECKPOINT: Core Foundation & Security Implementation Complete",
+        "deliverables": [
+          "Core Foundation & Security Implementation fully implemented",
+          "All tests passing",
+          "Code coverage \u2265 80%",
+          "Documentation updated"
+        ],
+        "verification_steps": [
+          "Run test suite and verify all tests pass",
+          "Check coverage report meets minimum threshold",
+          "Review code for standards compliance",
+          "Verify documentation is complete"
+        ],
+        "common_issues": [
+          {
+            "issue": "Tests failing",
+            "solution": "Review test expectations and implementation alignment"
+          },
+          {
+            "issue": "Low coverage",
+            "solution": "Add edge case tests and error handling tests"
+          }
+        ]
+      }
+    },
+    {
+      "section_number": "1.2",
+      "title": "Foundation & Security Integration",
+      "work_unit_context": {
+        "complexity": "High",
+        "complexity_reason": "Requires careful design and testing",
+        "scope": {
+          "estimated_lines": "500-1000 lines",
+          "file_count": "5-10 files"
+        },
+        "key_components": [
+          {
+            "name": "Foundation & Security Integration Module",
+            "estimated_lines": "200-400 lines",
+            "purpose": "Core implementation"
+          },
+          {
+            "name": "Tests",
+            "estimated_lines": "300-500 lines",
+            "purpose": "Comprehensive test coverage"
+          }
+        ]
+      },
+      "tasks": [
+        {
+          "number": "1.1.1",
+          "title": "Foundation & Security Integration Tests",
+          "description": "Write comprehensive tests for Foundation & Security Integration",
+          "tdd_instructions": "Start with unit tests for core functionality",
+          "tips": [
+            {
+              "type": "junior_dev",
+              "content": "Review existing patterns before starting",
+              "resource_link": "guides/coding-standards.md"
+            }
+          ]
+        },
+        {
+          "number": "1.2.2",
+          "title": "Foundation & Security Integration Implementation",
+          "description": "Implement Foundation & Security Integration to pass all tests",
+          "tdd_instructions": "Implement only what's needed to make tests pass",
+          "tips": [
+            {
+              "type": "junior_dev",
+              "content": "Review existing patterns before starting",
+              "resource_link": "guides/coding-standards.md"
+            }
+          ]
+        },
+        {
+          "number": "1.3.3",
+          "title": "Foundation & Security Integration Integration",
+          "description": "Integrate Foundation & Security Integration with existing system",
+          "tdd_instructions": "Write integration tests first",
+          "tips": [
+            {
+              "type": "junior_dev",
+              "content": "Review existing patterns before starting",
+              "resource_link": "guides/coding-standards.md"
+            }
+          ]
+        }
+      ],
+      "checkpoint": {
+        "stop_message": "CHECKPOINT: Foundation & Security Integration Complete",
+        "deliverables": [
+          "Foundation & Security Integration fully implemented",
+          "All tests passing",
+          "Code coverage \u2265 80%",
+          "Documentation updated"
+        ],
+        "verification_steps": [
+          "Run test suite and verify all tests pass",
+          "Check coverage report meets minimum threshold",
+          "Review code for standards compliance",
+          "Verify documentation is complete"
+        ],
+        "common_issues": [
+          {
+            "issue": "Tests failing",
+            "solution": "Review test expectations and implementation alignment"
+          },
+          {
+            "issue": "Low coverage",
+            "solution": "Add edge case tests and error handling tests"
+          }
+        ]
+      }
+    },
+    {
+      "section_number": "1.3",
+      "title": "Foundation & Security Testing",
+      "work_unit_context": {
+        "complexity": "High",
+        "complexity_reason": "Requires careful design and testing",
+        "scope": {
+          "estimated_lines": "500-1000 lines",
+          "file_count": "5-10 files"
+        },
+        "key_components": [
+          {
+            "name": "Foundation & Security Testing Module",
+            "estimated_lines": "200-400 lines",
+            "purpose": "Core implementation"
+          },
+          {
+            "name": "Tests",
+            "estimated_lines": "300-500 lines",
+            "purpose": "Comprehensive test coverage"
+          }
+        ]
+      },
+      "tasks": [
+        {
+          "number": "1.1.1",
+          "title": "Foundation & Security Testing Tests",
+          "description": "Write comprehensive tests for Foundation & Security Testing",
+          "tdd_instructions": "Start with unit tests for core functionality",
+          "tips": [
+            {
+              "type": "junior_dev",
+              "content": "Review existing patterns before starting",
+              "resource_link": "guides/coding-standards.md"
+            }
+          ]
+        },
+        {
+          "number": "1.2.2",
+          "title": "Foundation & Security Testing Implementation",
+          "description": "Implement Foundation & Security Testing to pass all tests",
+          "tdd_instructions": "Implement only what's needed to make tests pass",
+          "tips": [
+            {
+              "type": "junior_dev",
+              "content": "Review existing patterns before starting",
+              "resource_link": "guides/coding-standards.md"
+            }
+          ]
+        },
+        {
+          "number": "1.3.3",
+          "title": "Foundation & Security Testing Integration",
+          "description": "Integrate Foundation & Security Testing with existing system",
+          "tdd_instructions": "Write integration tests first",
+          "tips": [
+            {
+              "type": "junior_dev",
+              "content": "Review existing patterns before starting",
+              "resource_link": "guides/coding-standards.md"
+            }
+          ]
+        }
+      ],
+      "checkpoint": {
+        "stop_message": "CHECKPOINT: Foundation & Security Testing Complete",
+        "deliverables": [
+          "Foundation & Security Testing fully implemented",
+          "All tests passing",
+          "Code coverage \u2265 80%",
+          "Documentation updated"
+        ],
+        "verification_steps": [
+          "Run test suite and verify all tests pass",
+          "Check coverage report meets minimum threshold",
+          "Review code for standards compliance",
+          "Verify documentation is complete"
+        ],
+        "common_issues": [
+          {
+            "issue": "Tests failing",
+            "solution": "Review test expectations and implementation alignment"
+          },
+          {
+            "issue": "Low coverage",
+            "solution": "Add edge case tests and error handling tests"
+          }
+        ]
+      }
+    }
+  ],
+  "build_commands": {
+    "intro_narrative": "Use these commands throughout development:",
+    "tool": "npm",
+    "commands": [
+      {
+        "command": "test",
+        "description": "Run all tests",
+        "when_to_use": "After every change"
+      },
+      {
+        "command": "test:coverage",
+        "description": "Run tests with coverage report",
+        "when_to_use": "Before checkpoints"
+      },
+      {
+        "command": "lint",
+        "description": "Check code standards",
+        "when_to_use": "Before committing"
+      }
+    ]
+  },
+  "review_process": {
+    "importance_narrative": "Quality gates ensure we build the right thing correctly",
+    "checkpoint_count": 3,
+    "checkpoint_procedure": {
+      "stop_instructions": "STOP all work when you reach a checkpoint",
+      "review_preparation": [
+        "Ensure all tests are passing",
+        "Run coverage report",
+        "Update documentation",
+        "Prepare summary of changes"
+      ],
+      "wait_instructions": "Wait for review approval before proceeding"
+    }
+  },
+  "troubleshooting": {
+    "intro_narrative": "Common issues and solutions for this phase:",
+    "common_issues": [
+      {
+        "category": "Test Failures",
+        "issues": [
+          {
+            "symptom": "Tests timeout",
+            "cause": "Async operations not properly handled",
+            "solution": "Add proper async/await or increase timeout"
+          }
+        ]
+      },
+      {
+        "category": "Integration Issues",
+        "issues": [
+          {
+            "symptom": "Module not found errors",
+            "cause": "Import paths incorrect",
+            "solution": "Check relative vs absolute imports"
+          }
+        ]
+      }
+    ],
+    "escalation_path": {
+      "when_stuck": "If blocked for >2 hours:",
+      "documentation_requirements": [
+        "What you're trying to do",
+        "What error you're seeing",
+        "What you've already tried"
+      ]
+    }
+  },
+  "next_phase": {
+    "number": 2,
+    "title": "Phase 2 Implementation",
+    "preview_narrative": "The next phase will build upon Foundation & Security to add additional functionality.",
+    "key_features": [
+      "Advanced features",
+      "Performance optimization",
+      "Enhanced user experience"
+    ]
+  }
+}

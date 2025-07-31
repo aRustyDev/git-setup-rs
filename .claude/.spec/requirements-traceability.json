@@ -1,0 +1,99 @@
+{
+  "requirements": {
+    "functional": {
+      "FR-001": {
+        "text": "Profile Management System",
+        "traced": false
+      },
+      "FR-002": {
+        "text": "Git Configuration Application",
+        "traced": false
+      },
+      "FR-003": {
+        "text": "1Password CLI Integration  ",
+        "traced": false
+      },
+      "FR-004": {
+        "text": "Automatic Profile Detection",
+        "traced": false
+      },
+      "FR-005": {
+        "text": "Terminal User Interface",
+        "traced": false
+      },
+      "FR-006": {
+        "text": "Multi-Method Signing Support",
+        "traced": false
+      },
+      "FR-007": {
+        "text": "Cross-Platform Path Management",
+        "traced": false
+      },
+      "FR-008": {
+        "text": "Health Check System",
+        "traced": false
+      }
+    },
+    "non_functional": {
+      "NFR-001": {
+        "text": "Performance",
+        "traced": false
+      },
+      "NFR-002": {
+        "text": "Security",
+        "traced": false
+      },
+      "NFR-003": {
+        "text": "Reliability",
+        "traced": false
+      },
+      "NFR-004": {
+        "text": "Usability",
+        "traced": false
+      }
+    }
+  },
+  "traces": {
+    "to_architecture": {},
+    "to_acceptance": {
+      "FR-001": true,
+      "FR-002": true,
+      "FR-003": true,
+      "FR-004": true,
+      "FR-005": true,
+      "FR-006": true,
+      "FR-007": true,
+      "FR-008": true,
+      "NFR-001": true,
+      "NFR-002": true,
+      "NFR-003": true,
+      "NFR-004": true
+    },
+    "to_risks": {}
+  },
+  "errors": [
+    "Functional requirement FR-001 not traced to architecture",
+    "Functional requirement FR-002 not traced to architecture",
+    "Functional requirement FR-003 not traced to architecture",
+    "Functional requirement FR-004 not traced to architecture",
+    "Functional requirement FR-005 not traced to architecture",
+    "Functional requirement FR-006 not traced to architecture",
+    "Functional requirement FR-007 not traced to architecture",
+    "Functional requirement FR-008 not traced to architecture"
+  ],
+  "warnings": [
+    "High-risk requirement FR-003 not addressed in risk section",
+    "High-risk requirement NFR-001 not addressed in risk section",
+    "High-risk requirement NFR-002 not addressed in risk section",
+    "Non-functional requirement NFR-001 not explicitly traced",
+    "Non-functional requirement NFR-002 not explicitly traced",
+    "Non-functional requirement NFR-003 not explicitly traced",
+    "Non-functional requirement NFR-004 not explicitly traced"
+  ],
+  "summary": {
+    "total_requirements": 12,
+    "traced_to_architecture": 0,
+    "have_acceptance_scenarios": 12,
+    "high_risk_addressed": 0
+  }
+}
