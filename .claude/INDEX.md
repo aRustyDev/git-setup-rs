@@ -15,15 +15,32 @@ This directory contains all project documentation, plans, and resources for the 
 ├── .plan/                            # Phase implementation plans
 │   ├── IMPROVEMENTS_SUMMARY.md       # Summary of improvements made to plans
 │   ├── phase-1/                      # Phase 1: Foundation & Security
-│   │   ├── WORK_PLAN.md             # Original work plan
-│   │   ├── WORK_PLAN_IMPROVED.md    # Enhanced with junior dev support
+│   │   ├── WORK_PLAN.md             # Work plan with junior dev support
 │   │   └── REVIEW_PLAN.md           # Review criteria
-│   ├── phase-2/                      # Phase 2: Smart Detection & Platform
-│   ├── phase-3/                      # Phase 3: External Tool Integration  
-│   ├── phase-4/                      # Phase 4: Advanced Features
-│   ├── phase-5/                      # Phase 5: TUI Development
-│   │   └── ADVANCED_FEATURES.md     # Detailed advanced features guide
-│   └── phase-6/                      # Phase 6: Enhancement & Scale
+│   ├── phase-2/                      # Phase 2: Git Integration & Profile System
+│   │   ├── WORK_PLAN.md
+│   │   └── REVIEW_PLAN.md
+│   ├── phase-3/                      # Phase 3: User Interfaces
+│   │   ├── WORK_PLAN.md
+│   │   └── REVIEW_PLAN.md
+│   ├── phase-4/                      # Phase 4: 1Password Integration
+│   │   ├── WORK_PLAN.md
+│   │   └── REVIEW_PLAN.md
+│   ├── phase-5/                      # Phase 5: Pattern Matching & Auto-Detection
+│   │   ├── WORK_PLAN.md
+│   │   └── REVIEW_PLAN.md
+│   ├── phase-6/                      # Phase 6: Health Monitoring System
+│   │   ├── WORK_PLAN.md
+│   │   └── REVIEW_PLAN.md
+│   ├── phase-7/                      # Phase 7: Signing Methods - Basics
+│   │   ├── WORK_PLAN.md
+│   │   └── REVIEW_PLAN.md
+│   ├── phase-8/                      # Phase 8: Advanced Features
+│   │   ├── WORK_PLAN.md
+│   │   └── REVIEW_PLAN.md
+│   └── phase-9/                      # Phase 9: Platform & Polish
+│       ├── WORK_PLAN.md
+│       └── REVIEW_PLAN.md
 ├── .reviews/                         # Code reviews and analysis
 │   ├── SENIOR_DEV_REVIEW.md         # Critical code review findings
 │   ├── PROJECT_UNDERSTANDING_2024_01.md # Deep project analysis
@@ -55,7 +72,7 @@ This directory contains all project documentation, plans, and resources for the 
 ### Planning & Implementation
 - **[.plan/](.plan/)** - Detailed work plans for each phase with junior developer support
 - **[.plan/IMPROVEMENTS_SUMMARY.md](.plan/IMPROVEMENTS_SUMMARY.md)** - How plans were enhanced
-- **[.plan/phase-5/ADVANCED_FEATURES.md](.plan/phase-5/ADVANCED_FEATURES.md)** - Detailed advanced features implementation
+- **[.plan/ROADMAP_9_PHASES.md](.plan/ROADMAP_9_PHASES.md)** - Complete 9-phase roadmap
 
 ### Specifications
 - **[.spec/SPEC.md](.spec/SPEC.md)** - Complete project specification
@@ -77,23 +94,27 @@ This directory contains all project documentation, plans, and resources for the 
 - **[.reviews/RECOMMENDATIONS_2024_01.md](.reviews/RECOMMENDATIONS_2024_01.md)** - Specific fixes for critical issues
 - **[.reviews/ALIGNMENT_PLAN.md](.reviews/ALIGNMENT_PLAN.md)** - Plan to fix broken implementation
 
-## Phase Plans Overview
+## Phase Plans Overview (9 Phases)
 
-1. **Phase 1: Foundation & Security** - Core config management, secure file operations
-2. **Phase 2: Smart Detection & Platform** - Auto-detection, cross-platform support
-3. **Phase 3: External Tool Integration** - SSH, GPG, 1Password integration
-4. **Phase 4: Advanced Features** - Project-specific configs, migrations
-5. **Phase 5: TUI Development** - Terminal user interface
-6. **Phase 6: Enhancement & Scale** - Performance optimization, enterprise features
+1. **Phase 1: Foundation & Security** - Core infrastructure and security components
+2. **Phase 2: Git Integration & Profile System** - Git operations and profile management
+3. **Phase 3: User Interfaces** - CLI and TUI implementation
+4. **Phase 4: 1Password Integration** - Secure credential management
+5. **Phase 5: Pattern Matching & Auto-Detection** - Repository detection and profile switching
+6. **Phase 6: Health Monitoring System** - Diagnostics and system health checks
+7. **Phase 7: Signing Methods - Basics** - SSH and GPG signing implementation
+8. **Phase 8: Advanced Features** - X509, Sigstore signing and remote import
+9. **Phase 9: Platform & Polish** - Cross-platform support, optimization, and distribution
 
 ## Getting Started
 
 1. Review the [SPEC.md](.spec/SPEC.md) for project overview
 2. Read [CONTEXT.md](resources/CONTEXT.md) for project background
 3. Check [SENIOR_DEV_REVIEW.md](.reviews/SENIOR_DEV_REVIEW.md) for current issues
-4. Start with [Phase 1 Work Plan](.plan/phase-1/WORK_PLAN.md)
-5. Reference [rust-glossary.md](resources/rust-glossary.md) for Rust concepts
-6. Follow [TDD_GUIDE.md](resources/guides/TDD_GUIDE.md) religiously
+4. Review [ROADMAP_9_PHASES.md](.plan/ROADMAP_9_PHASES.md) for project timeline
+5. Start with [Phase 1 Work Plan](.plan/phase-1/WORK_PLAN.md)
+6. Reference [rust-glossary.md](resources/rust-glossary.md) for Rust concepts
+7. Follow [TDD_GUIDE.md](resources/guides/TDD_GUIDE.md) religiously
 
 ## For Junior Developers
 

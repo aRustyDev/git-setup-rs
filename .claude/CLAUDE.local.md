@@ -5,15 +5,47 @@ You are working on git-setup-rs, a Rust reimplementation of a Git configuration 
 
 ## Core Development Principles
 
-### 1. Test-Driven Development (TDD) is MANDATORY
-- **ALWAYS** write tests FIRST, before any implementation
-- Follow the Red-Green-Refactor cycle rigorously:
-  1. Write a failing test that describes desired behavior
-  2. Run the test and verify it fails
-  3. Write the MINIMUM code to make the test pass
-  4. Refactor while keeping tests green
-- Use `just watch-test <test_name>` for rapid feedback
-- If you find yourself writing code without a test, STOP and write the test first
+### 1. Test-Driven Development (TDD) is MANDATORY - STRICT ENFORCEMENT
+
+**VIOLATIONS WILL RESULT IN CHECKPOINT FAILURE**
+
+#### TDD Enforcement Rules:
+1. **PROVE THE RED PHASE**: You MUST paste the failing test output showing the test fails
+2. **NO IMPLEMENTATION WITHOUT RED**: Writing implementation code before showing RED test output = IMMEDIATE CHECKPOINT FAILURE
+3. **COMMIT THE RED TEST**: You MUST commit the failing test with message `test: [RED] <description>`
+4. **MINIMAL GREEN**: Only write enough code to make the test pass, nothing more
+5. **COMMIT THE GREEN**: Commit passing implementation with message `feat: [GREEN] <description>`
+6. **REFACTOR ONLY WITH GREEN**: Any refactoring must maintain passing tests
+
+#### TDD Audit Trail:
+For EVERY feature implementation, you MUST provide:
+```bash
+# 1. Show the test code
+cat src/module/tests.rs
+
+# 2. Run and show RED output
+cargo test test_name -- --nocapture
+# MUST show "test result: FAILED"
+
+# 3. Commit the failing test
+git add . && git commit -m "test: [RED] test for feature X"
+
+# 4. Show implementation code
+cat src/module/implementation.rs
+
+# 5. Run and show GREEN output
+cargo test test_name -- --nocapture
+# MUST show "test result: ok"
+
+# 6. Commit the implementation
+git add . && git commit -m "feat: [GREEN] implement feature X"
+```
+
+**CHECKPOINT REVIEWERS WILL VERIFY**:
+- Git history shows RED commits before GREEN commits
+- No implementation code exists without corresponding tests
+- Test coverage meets or exceeds requirements
+- Tests actually test the requirements, not just exist
 
 ### 2. Commit Discipline
 - Make small, atomic commits after each TDD cycle
@@ -160,3 +192,143 @@ Priority reading order:
 - When in doubt, ask for clarification
 
 Think step by step. Be thorough. Be precise. Build something excellent.
+
+## CHECKPOINT REVIEW PROCESS - MANDATORY PROCEDURES
+
+### Directory Structure for Reviews
+Each phase checkpoint MUST have the following structure:
+```
+.claude/.reviews/
+├── phase-1/
+│   ├── index.md                    # Links to all checkpoint contents with line numbers
+│   ├── checkpoint-1/
+│   │   ├── FEEDBACK.md            # Reviewer feedback (append-only)
+│   │   ├── QUESTIONS.md           # Q&A between junior dev and reviewer
+│   │   ├── CHALLENGES.md          # Challenges faced by junior dev (append-only)
+│   │   ├── RESEARCH.md            # Research plans and findings (append-only)
+│   │   └── LESSONS.md             # Lessons learned (append-only)
+│   └── checkpoint-2/
+│       └── ... (same structure)
+└── phase-2/
+    └── ... (same structure)
+```
+
+### REVIEWER RESPONSIBILITIES
+
+1. **Update Index File**
+   - Path: `/Users/asmith/code/public/git-setup-rs/.claude/.reviews/phase-X/index.md`
+   - MUST contain links to each checkpoint's contents
+   - MUST include specific line numbers where updates were added
+   - Example:
+     ```markdown
+     ## Checkpoint 1: Secure File System
+     - [FEEDBACK.md](checkpoint-1/FEEDBACK.md) - Lines 1-45 (initial), 46-72 (revision 1)
+     - [QUESTIONS.md](checkpoint-1/QUESTIONS.md) - Q1 (lines 1-15), Q2 (lines 16-28)
+     - [CHALLENGES.md](checkpoint-1/CHALLENGES.md) - Lines 1-23
+     ```
+
+2. **Write Feedback**
+   - Path: `/Users/asmith/code/public/git-setup-rs/.claude/.reviews/phase-X/checkpoint-Y/FEEDBACK.md`
+   - This is APPEND-ONLY - add new feedback below previous
+   - Include timestamp and review iteration number
+   - Must cover: TDD compliance, code quality, security, performance, completeness
+   - Example:
+     ```markdown
+     ## Review Iteration 1 - 2025-07-30 14:23:00
+     
+     ### TDD Compliance: FAILED
+     - No RED test output provided for atomic operations
+     - Implementation found without corresponding test-first evidence
+     
+     ### Requirements:
+     1. Show RED test output for atomic_write function
+     2. Add security tests for permission validation
+     ```
+
+3. **Monitor Questions**
+   - Check `/Users/asmith/code/public/git-setup-rs/.claude/.reviews/phase-X/checkpoint-Y/QUESTIONS.md`
+   - MUST check BEFORE starting review
+   - MUST check every 30 seconds for 4 minutes AFTER review
+   - Answer directly next to each question
+   - Example:
+     ```markdown
+     Q1: Should atomic writes use tempfile or manual implementation?
+     A1: Use tempfile crate - it's battle-tested and handles edge cases.
+     
+     Q2: What permission should backup files have?
+     A2: Same as original file (preserve permissions).
+     ```
+
+4. **Approval Criteria**
+   - **For Checkpoints**: 
+     - All checkpoint deliverables complete
+     - All TDD evidence MUST be provided
+     - No security vulnerabilities
+     - Code meets quality standards
+     - Tests passing with required coverage
+   - **For Phase Completion Only**:
+     - Score MUST be >95/100
+     - Phase criteria MUST be 100% complete
+     - All checkpoints approved
+     - Performance targets met
+
+### JUNIOR DEVELOPER RESPONSIBILITIES
+
+1. **Ask Questions IMMEDIATELY**
+   - Path: `/Users/asmith/code/public/git-setup-rs/.claude/.reviews/phase-X/checkpoint-Y/QUESTIONS.md`
+   - Write questions and WAIT 3 minutes
+   - Check every 30 seconds until answered
+   - Ask clarifications about feedback IMMEDIATELY after reading
+
+2. **Document Challenges**
+   - Path: `/Users/asmith/code/public/git-setup-rs/.claude/.reviews/phase-X/checkpoint-Y/CHALLENGES.md`
+   - APPEND-ONLY file
+   - Document with timestamp
+   - Include: what you tried, what failed, current blockers
+
+3. **Record Research**
+   - Path: `/Users/asmith/code/public/git-setup-rs/.claude/.reviews/phase-X/checkpoint-Y/RESEARCH.md`
+   - APPEND-ONLY file
+   - Include: research question, sources consulted, findings, decision made
+
+4. **Capture Lessons**
+   - Path: `/Users/asmith/code/public/git-setup-rs/.claude/.reviews/phase-X/checkpoint-Y/LESSONS.md`
+   - APPEND-ONLY file
+   - Include: what you learned, what you'd do differently, key insights
+
+5. **Complete ALL Feedback**
+   - Read ALL feedback in FEEDBACK.md
+   - Complete ALL requirements before continuing
+   - Ask clarifying questions if needed
+   - DO NOT proceed until feedback is addressed
+
+### WORKFLOW ENFORCEMENT
+
+1. **Junior Dev reaches checkpoint** → Creates review directory structure
+2. **Junior Dev writes any pre-review questions** → Waits for answers
+3. **Reviewer checks questions** → Answers all questions
+4. **Reviewer performs review** → Writes to FEEDBACK.md
+5. **Reviewer monitors for questions** → 4 minutes post-review
+6. **Junior Dev reads feedback** → Asks clarifications immediately
+7. **Junior Dev implements feedback** → Documents challenges/lessons
+8. **Junior Dev requests re-review** → Process repeats until approved
+
+### FAILURE CONDITIONS
+
+**Checkpoint FAILS if**:
+- TDD evidence not provided (RED → GREEN commits)
+- Questions not answered within review window
+- Feedback not fully addressed before continuing
+- Checkpoint deliverables incomplete
+- Review files not properly maintained
+- Junior dev proceeds without approval
+
+**Phase Completion FAILS if**:
+- Any checkpoint not approved
+- Score <95/100
+- Phase criteria <100% complete
+- Performance targets not met
+- Missing documentation
+- Security vulnerabilities found
+
+This process ensures knowledge transfer, quality control, and proper documentation throughout the project.

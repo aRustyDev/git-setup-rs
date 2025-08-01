@@ -1,0 +1,127 @@
+# Profile Inheritance Example
+# This shows how to use profile inheritance to avoid repetition
+# Perfect for managing multiple related profiles
+
+# Base profile with common settings
+[profile]
+name = "base-work"
+description = "Base configuration for all work profiles"
+
+[profile.git]
+user_name = "Jane Smith"
+user_email = "jane.smith@techcorp.com"
+
+[profile.git.extra]
+# Common settings for all work projects
+pull.rebase = "true"
+core.autocrlf = "input"
+init.defaultBranch = "main"
+
+# Common signing configuration
+[profile.signing]
+method = "ssh"
+ssh_key = "op://Work/TechCorp SSH Key/private key"
+
+# ---
+# Client-specific profiles that inherit from base
+# ---
+
+[[profile]]
+name = "work-client-a"
+description = "Settings for Client A projects"
+
+# This is the magic line - inherit from base-work
+extends = "base-work"
+
+# Override just the email for this client
+[profile.git]
+user_email = "jane.smith@client-a.com"
+
+# Add client-specific Git settings
+[profile.git.extra]
+# Client A requires conventional commits
+commit.template = "~/.gitmessage-client-a"
+
+# Client A repositories
+[[profile.remotes]]
+pattern = "github.com/client-a/*"
+priority = 20
+
+# ---
+
+[[profile]]
+name = "work-client-b"
+description = "Settings for Client B projects"
+extends = "base-work"
+
+# Client B uses a different email domain
+[profile.git]
+user_email = "jsmith@client-b-domain.com"
+
+# Client B requires GPG signing instead of SSH
+[profile.signing]
+method = "gpg"
+gpg_key = "DEF45678DEF45678"
+
+[[profile.remotes]]
+pattern = "gitlab.client-b.com/*"
+priority = 20
+
+# ---
+
+[[profile]]
+name = "work-internal"
+description = "Internal TechCorp projects"
+extends = "base-work"
+
+# Internal projects use the base email (no override needed)
+
+# But we add specific settings
+[profile.git.extra]
+# Internal convention
+commit.gpgsign = "true"
+tag.gpgsign = "true"
+
+[[profile.remotes]]
+pattern = "github.com/techcorp/*"
+priority = 30
+
+# ---
+# Advanced: Multi-level inheritance
+# ---
+
+[[profile]]
+name = "work-internal-experimental"
+description = "Experimental internal projects"
+
+# Inherit from work-internal, which inherits from base-work
+extends = "work-internal"
+
+[profile.git.extra]
+# Enable experimental features
+feature.manyFiles = "true"
+core.fsmonitor = "true"
+
+# Only for experimental repos
+[[profile.remotes]]
+pattern = "github.com/techcorp/experimental-*"
+priority = 40
+
+# Junior Developer Notes:
+# 
+# How Inheritance Works:
+# 1. Child profile gets all settings from parent
+# 2. Child can override any setting
+# 3. Arrays (like remotes) are merged, not replaced
+# 4. Can chain inheritance (child -> parent -> grandparent)
+# 
+# Benefits:
+# - Change base email/name once, updates all children
+# - Keep client-specific settings isolated
+# - Easy to add new clients
+# - Avoid copy-paste errors
+# 
+# To debug inheritance:
+# git-setup show work-client-a --expanded
+# 
+# This will show the final merged configuration

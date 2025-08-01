@@ -1,0 +1,58 @@
+# Basic Profile Example - Start Here!
+# This is the simplest possible profile configuration
+# 
+# To use this profile:
+# 1. Copy this file to your profiles directory
+# 2. Update the values to match your information
+# 3. Run: git-setup use personal
+
+[profile]
+# Unique identifier for this profile (required)
+# Use lowercase letters, numbers, and hyphens only
+name = "personal"
+
+# Human-readable description (optional)
+# Helps you remember what this profile is for
+description = "My personal GitHub projects"
+
+# Git configuration section (required)
+[profile.git]
+# Your display name in Git commits
+user_name = "Your Name"
+
+# Your email address for Git commits
+# This will be public in your commit history!
+user_email = "your.email@example.com"
+
+# Additional Git configuration (optional)
+# Any valid Git config key can be added here
+[profile.git.extra]
+# Example: Set default branch name
+init.defaultBranch = "main"
+
+# Example: Set pull strategy
+pull.rebase = "false"
+
+# Signing configuration (optional)
+# Uncomment this section to enable commit signing
+# [profile.signing]
+# # Method can be: ssh, gpg, x509, or sigstore
+# method = "ssh"
+# 
+# # For SSH signing (recommended for beginners)
+# ssh_key_path = "~/.ssh/id_ed25519"
+# 
+# # For 1Password integration (advanced)
+# # ssh_key = "op://Personal/GitHub SSH Key/private key"
+
+# Remote URL patterns (optional)
+# Helps auto-detect when to use this profile
+[[profile.remotes]]
+# This profile will be suggested for any GitHub personal repos
+pattern = "github.com/yourusername/*"
+priority = 10  # Higher number = higher priority
+
+# You can have multiple patterns
+[[profile.remotes]]
+pattern = "gitlab.com/personal/*"
+priority = 5

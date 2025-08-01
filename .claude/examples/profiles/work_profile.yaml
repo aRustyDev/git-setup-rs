@@ -1,0 +1,82 @@
+# Work Profile Example - YAML Format
+# This example shows a more complex work profile configuration
+# YAML format is more readable for complex nested structures
+
+profile:
+  # Profile identifier
+  name: work
+  
+  # Detailed description
+  description: Corporate GitHub account for ACME Corp
+  
+  # Git configuration
+  git:
+    # Work identity
+    user_name: John Doe
+    user_email: john.doe@acme-corp.com
+    
+    # Corporate Git settings
+    extra:
+      # Use corporate email for commits
+      user.signingkey: john.doe@acme-corp.com
+      
+      # Corporate proxy settings
+      http.proxy: http://proxy.acme-corp.com:8080
+      https.proxy: http://proxy.acme-corp.com:8080
+      
+      # Increase buffer for large repos
+      http.postBuffer: 524288000
+      
+      # Corporate CA certificate
+      http.sslCAPath: /etc/acme-corp/ca-certificates
+  
+  # Signing configuration for compliance
+  signing:
+    # Use GPG for corporate compliance
+    method: gpg
+    
+    # GPG key ID (find with: gpg --list-secret-keys)
+    gpg_key: ABCD1234ABCD1234
+    
+    # Always sign commits (corporate policy)
+    sign_commits: true
+    sign_tags: true
+  
+  # Auto-detection patterns
+  remotes:
+    # Match all corporate repos
+    - pattern: github.com/acme-corp/*
+      priority: 100  # Highest priority
+    
+    # Match corporate GitLab
+    - pattern: gitlab.acme-corp.com/*
+      priority: 100
+    
+    # Match your fork of corporate repos
+    - pattern: github.com/johndoe-acme/*
+      priority: 90
+  
+  # Environment variables (optional)
+  # Set when this profile is active
+  environment:
+    # Corporate npm registry
+    NPM_REGISTRY: https://npm.acme-corp.com
+    
+    # Corporate Docker registry
+    DOCKER_REGISTRY: docker.acme-corp.com
+    
+    # Enable debug logging for troubleshooting
+    GIT_TRACE: "1"
+
+# Notes for Junior Developers:
+# 
+# 1. YAML uses indentation (2 spaces) instead of brackets
+# 2. Lists start with a dash (-)
+# 3. Strings don't need quotes unless they contain special characters
+# 4. Comments start with #
+# 
+# To validate this file:
+# yamllint work_profile.yaml
+# 
+# To convert to TOML:
+# git-setup convert work_profile.yaml --to toml

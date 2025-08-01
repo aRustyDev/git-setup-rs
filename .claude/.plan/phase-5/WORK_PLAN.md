@@ -1,1975 +1,1541 @@
-# Phase 5: Advanced Features - Work Plan
+# Phase 5: Pattern Matching & Auto-Detection - Work Plan
 
 ## Prerequisites
 
-Phase 5 builds advanced capabilities on top of the foundation from previous phases.
+Before starting Phase 5, ensure you're comfortable with basic Rust patterns.
 
 **Required from Previous Phases**:
-- Profile management system (Phase 2)
-- CLI and TUI interfaces (Phase 3)
-- 1Password integration (Phase 4)
-- Git configuration engine (Phase 2)
-- Security primitives (Phase 1)
+- ✅ Profile management system (Phase 2)
+- ✅ Git integration working (Phase 2)
+- ✅ Basic CLI/TUI (Phase 3)
+- ✅ Error handling patterns
 
 **Required Knowledge**:
-- **Pattern Matching**: Glob patterns, path traversal (*critical*)
-- **Git Internals**: Repository detection, configuration scopes (*critical*)
-- **Signing Methods**: SSH, GPG, x509, gitsign protocols (*critical*)
-- **System Diagnostics**: Health check patterns (*required*)
-- **Network Programming**: HTTP/HTTPS for remote imports (*required*)
-
-**Required Tools**:
-- Git 2.25+ with signing support
-- SSH agent running
-- GPG configured (optional)
-- Network access for remote features
+- **Rust Patterns**: Match expressions, pattern syntax (*critical*)
+- **Regular Expressions**: Basic regex understanding (*helpful*)
+- **Git Remotes**: How Git stores remote URLs (*required*)
 
 💡 **Junior Dev Resources**:
-- 📚 [Glob Pattern Guide](https://man7.org/linux/man-pages/man7/glob.7.html) - Pattern matching basics
-- 🎥 [Git Internals](https://www.youtube.com/watch?v=P6jD966jzlk) - 30 min deep dive
-- 📖 [Git Signing Guide](https://docs.github.com/en/authentication/managing-commit-signature-verification) - All signing methods
-- 🔧 [Pattern Playground](https://globster.xyz/) - Test glob patterns
-- 💻 [HTTP Client in Rust](https://rust-lang-nursery.github.io/rust-cookbook/web/clients.html) - Network basics
+- 📚 [Rust Book Ch 18](https://doc.rust-lang.org/book/ch18-00-patterns.html) - Patterns and Matching
+- 📖 [Pattern Matching Guide](https://doc.rust-lang.org/rust-by-example/flow_control/match.html) - Comprehensive intro
+- 📖 [Regex Tutorial](https://regexone.com/) - Interactive regex learning
+- 🔧 [Rust Playground](https://play.rust-lang.org/) - Test patterns online
+- 📝 Examples: See `examples/patterns/` directory
+- 📊 [Performance Profiling Guide](../PERFORMANCE_PROFILING_GUIDE.md) - Optimize pattern matching
+- 🔗 [Cross-Phase Integration Guide](../CROSS_PHASE_INTEGRATION_GUIDE.md) - Pattern detection integration
 
-## Quick Reference - Essential Resources
+## Quick Reference
 
-### Pattern Matching & Detection
-- [Glob Documentation](https://docs.rs/glob)
-- [Git Directory Structure](https://git-scm.com/book/en/v2/Git-Internals)
-- [Rust Path Handling](https://doc.rust-lang.org/std/path/)
+### Git Commands
+```bash
+# List remotes with URLs
+git remote -v
 
-### Signing Documentation
-- [Git Signing Overview](https://git-scm.com/book/en/v2/Git-Tools-Signing-Your-Work)
-- [SSH Signing](https://github.blog/changelog/2021-11-15-ssh-commit-verification-now-supported/)
-- [Gitsign Documentation](https://github.com/sigstore/gitsign)
-- [x509 Signing](https://git-scm.com/docs/git-config#Documentation/git-config.txt-gpgx509program)
+# Get URL of specific remote
+git remote get-url origin
 
-### Project Resources
-- **[SPEC.md](../../spec/SPEC.md)** - See FR-004, FR-006, FR-008
-- **[Profile Manager](../phase-2/)** - Core profile operations
-- **[1Password Integration](../phase-4/)** - Key discovery APIs
+# Add new remote
+git remote add upstream https://github.com/org/repo.git
+```
 
-### Commands
-- `git config --show-scope --list` - View all Git config
-- `ssh-add -l` - List SSH keys in agent
-- `gpg --list-secret-keys` - List GPG keys
-- `gitsign verify` - Test gitsign setup
+### Pattern Types We'll Implement
+1. **Exact Match**: `github.com/myorg/myrepo`
+2. **Wildcard**: `github.com/myorg/*`
+3. **Regex**: `github\.com/myorg/project-\d+`
 
 ## Overview
 
-Phase 5 adds intelligent automation and advanced signing capabilities to git-setup-rs. These features reduce manual configuration and support enterprise signing requirements.
+Phase 5 implements intelligent profile auto-detection based on Git repository remote URLs. This feature significantly improves user experience by automatically suggesting the correct profile.
 
 **Key Deliverables**:
-- Automatic profile detection based on repository context
-- Multi-method signing configuration (SSH, GPG, x509, gitsign)
-- Comprehensive health check system
-- Remote profile import with verification
-- Pattern-based profile matching
-
-**Checkpoint Strategy**: 4 checkpoints for feature milestones
+- Pattern matching system with multiple pattern types
+- Repository remote URL detection
+- Profile suggestion based on patterns
+- User confirmation flow
+- Pattern priority system
 
 **Time Estimate**: 2 weeks (80 hours)
+- Week 1: Pattern matching implementation (40h)
+- Week 2: Auto-detection and integration (40h)
 
-## Development Methodology: Test-Driven Development (TDD)
+## Week 1: Pattern Matching Fundamentals
 
-Special considerations for advanced features:
-1. **Pattern Testing** - Edge cases for path matching
-2. **Signing Tests** - Mock signing commands
-3. **Health Checks** - Simulate various failure modes
-4. **Network Tests** - Mock HTTP requests
+### 5A.1 Pattern System Design (16 hours)
 
-## Done Criteria Checklist
+#### Task 5A.1.1: Understanding Pattern Matching (4 hours)
 
-Phase 5 is complete when:
-- [ ] Profile detected in <100ms on directory change
-- [ ] All 4 signing methods configurable
-- [ ] Health checks complete in <1s total
-- [ ] Remote profiles imported securely
-- [ ] Pattern matching supports wildcards
-- [ ] No signing method conflicts
-- [ ] Comprehensive error messages
-- [ ] All 4 checkpoints reviewed
+💡 **Junior Dev Concept**: Pattern Matching in Rust
+**What it is**: Rust's way of checking if data matches specific patterns
+**Why we use it**: More powerful than if/else, compiler ensures all cases handled
+**Real Example**: Matching "github.com/work/*" to suggest work profile
 
-## Work Breakdown with Review Checkpoints
+**Prerequisites**:
+- [ ] Complete: Rust Book Chapter 18.1-18.2
+- [ ] Try: Pattern matching exercises in playground
+- [ ] Understand: Exhaustive matching concept
 
-### 5.1 Automatic Profile Detection (20 hours)
-
-**Complexity**: High - Pattern matching and performance critical
-**Files**: `src/detection/mod.rs`, `src/detection/patterns.rs`, `src/detection/cache.rs`
-
-#### Task 5.1.1: Detection Engine Architecture (5 hours)
-
-💡 **Junior Dev Concept**: Automatic Detection
-**What it is**: Detect which Git profile to use based on repository location/remote
-**Example**: All repos in ~/work/ use work profile, github.com/company/* uses company profile
-**Key challenge**: Must be FAST - runs on every directory change
-
-Build the detection framework:
-
-```rust
-pub struct ProfileDetector {
-    patterns: Vec<DetectionPattern>,
-    cache: DetectionCache,
-    profile_manager: Arc<dyn ProfileManager>,
-}
-
-#[derive(Debug, Clone)]
-pub struct DetectionPattern {
-    pub name: String,
-    pub priority: u8,
-    pub matchers: Vec<Matcher>,
-}
-
-#[derive(Debug, Clone)]
-pub enum Matcher {
-    /// Match repository remote URL
-    Remote { pattern: String },
-    /// Match file path
-    Path { glob: String },
-    /// Match directory name
-    Directory { pattern: String },
-    /// Match Git config value
-    GitConfig { key: String, value: String },
-    /// Custom matcher function
-    Custom(Arc<dyn Fn(&Path) -> bool>),
-}
-
-impl ProfileDetector {
-    pub async fn detect(&self, path: &Path) -> Result<Option<String>> {
-        // 1. Check cache first
-        if let Some(profile) = self.cache.get(path) {
-            return Ok(Some(profile));
-        }
-        
-        // 2. Find Git repository root
-        let repo_path = find_git_root(path)?;
-        
-        // 3. Evaluate patterns in priority order
-        for pattern in &self.patterns {
-            if self.matches_pattern(&pattern, &repo_path).await? {
-                self.cache.set(path, &pattern.name);
-                return Ok(Some(pattern.name.clone()));
-            }
-        }
-        
-        Ok(None)
-    }
-}
+**Visual Concept**:
 ```
-
-**Requirements**:
-- Sub-100ms detection time
-- Cache invalidation on config change
-- Support nested Git repositories
-- Handle submodules correctly
+Git Remote URL                    Pattern                     Result
+──────────────                   ─────────                   ──────
+"github.com/acme/api"      matches "github.com/acme/*"  →  ✓ Match
+"github.com/personal/blog" matches "github.com/acme/*"  →  ✗ No match
+"gitlab.com/acme/api"      matches "*.com/acme/*"        →  ✓ Match
+```
 
 **Step-by-Step Implementation**:
 
-1. **Design the pattern system** (1 hour)
+1. **Create Pattern Enum** (1 hour)
    ```rust
-   // Pattern priority: Higher number = higher precedence
-   // This ensures specific patterns override general ones
+   // src/profile/pattern.rs
    
+   use regex::Regex;
+   use std::fmt;
+   
+   /// Different types of patterns for matching URLs
    #[derive(Debug, Clone)]
-   pub struct DetectionPattern {
-       pub name: String,        // Profile name to apply
-       pub priority: u8,        // 0-255, higher wins
-       pub matchers: Vec<Matcher>,  // ALL must match
+   pub enum UrlPattern {
+       /// Exact string match
+       Exact(String),
+       
+       /// Simple wildcard pattern (only * supported)
+       Wildcard(String),
+       
+       /// Full regex pattern
+       Regex(Regex),
    }
    
-   // Example patterns:
-   // Pattern 1: "All work repos"
-   // - priority: 10
-   // - matcher: Path { glob: "~/work/**" }
-   //
-   // Pattern 2: "Specific work project"
-   // - priority: 20 (overrides pattern 1)
-   // - matcher: Remote { pattern: "github.com:company/important-*" }
-   ```
-   
-   💡 **Priority System**: Specific patterns beat general ones
-
-2. **Find Git repository root** (1.5 hours)
-   ```rust
-   use std::path::{Path, PathBuf};
-   
-   pub fn find_git_root(start_path: &Path) -> Result<PathBuf> {
-       let mut current = start_path;
-       
-       loop {
-           // Check if .git exists
-           let git_dir = current.join(".git");
-           
-           if git_dir.exists() {
-               // Could be a file (submodule) or directory
-               if git_dir.is_dir() {
-                   return Ok(current.to_path_buf());
-               } else if git_dir.is_file() {
-                   // Submodule: .git file contains path to real git dir
-                   return handle_submodule(&git_dir);
-               }
+   impl UrlPattern {
+       /// Create pattern from string with auto-detection
+       pub fn from_str(pattern: &str) -> Result<Self, PatternError> {
+           if pattern.contains('*') {
+               Ok(UrlPattern::Wildcard(pattern.to_string()))
+           } else if pattern.starts_with('^') || pattern.contains('$') {
+               let regex = Regex::new(pattern)
+                   .map_err(|e| PatternError::InvalidRegex(e.to_string()))?;
+               Ok(UrlPattern::Regex(regex))
+           } else {
+               Ok(UrlPattern::Exact(pattern.to_string()))
            }
-           
-           // Move up one directory
-           match current.parent() {
-               Some(parent) => current = parent,
-               None => return Err(DetectionError::NotInGitRepo),
-           }
-       }
-   }
-   
-   fn handle_submodule(git_file: &Path) -> Result<PathBuf> {
-       // Read .git file which contains: gitdir: /path/to/.git/modules/name
-       let content = fs::read_to_string(git_file)?;
-       
-       if let Some(gitdir) = content.strip_prefix("gitdir: ") {
-           let gitdir = gitdir.trim();
-           // Return the working directory, not the git dir
-           Ok(git_file.parent().unwrap().to_path_buf())
-       } else {
-           Err(DetectionError::InvalidGitFile)
        }
    }
    ```
    
-   ⚠️ **Common Mistake**: Forgetting about submodules
-   ✅ **Solution**: Check if .git is a file (submodule) or directory
+   💡 **Design Choice**: Auto-detect pattern type from string format
 
-3. **Extract repository information** (1.5 hours)
+2. **Implement Pattern Matching** (1.5 hours)
    ```rust
-   pub struct DetectionContext {
-       pub path: PathBuf,
-       pub repo_root: PathBuf,
-       pub remotes: Vec<String>,
-       pub branch: Option<String>,
-   }
-   
-   impl DetectionContext {
-       pub async fn from_path(path: &Path) -> Result<Self> {
-           let repo_root = find_git_root(path)?;
-           
-           // Use git2 to read repository info
-           let repo = git2::Repository::open(&repo_root)?;
-           
-           // Get all remotes
-           let remotes = repo.remotes()?
-               .iter()
-               .filter_map(|name| {
-                   name.and_then(|n| {
-                       repo.find_remote(n).ok()
-                           .and_then(|r| r.url().map(|u| u.to_string()))
-                   })
-               })
-               .collect();
-           
-           // Get current branch
-           let branch = repo.head().ok()
-               .and_then(|h| h.shorthand().map(|s| s.to_string()));
-           
-           Ok(Self {
-               path: path.to_path_buf(),
-               repo_root,
-               remotes,
-               branch,
-           })
+   impl UrlPattern {
+       /// Check if URL matches this pattern
+       pub fn matches(&self, url: &str) -> bool {
+           match self {
+               UrlPattern::Exact(pattern) => url == pattern,
+               UrlPattern::Wildcard(pattern) => self.matches_wildcard(url, pattern),
+               UrlPattern::Regex(regex) => regex.is_match(url),
+           }
        }
        
-       pub fn git_config(&self, key: &str) -> Result<Option<String>> {
-           let repo = git2::Repository::open(&self.repo_root)?;
-           let config = repo.config()?;
+       /// Handle wildcard matching
+       fn matches_wildcard(&self, url: &str, pattern: &str) -> bool {
+           // Split pattern by * to get parts
+           let parts: Vec<&str> = pattern.split('*').collect();
            
-           match config.get_string(key) {
-               Ok(value) => Ok(Some(value)),
-               Err(e) if e.code() == git2::ErrorCode::NotFound => Ok(None),
-               Err(e) => Err(e.into()),
-           }
-       }
-   }
-   ```
-
-4. **Build the complete detector** (1 hour)
-   ```rust
-   impl ProfileDetector {
-       pub async fn detect(&self, path: &Path) -> Result<Option<String>> {
-           let start = Instant::now();
-           
-           // Check cache first (critical for performance!)
-           if let Some(profile) = self.cache.get(path) {
-               return Ok(Some(profile));
+           if parts.is_empty() {
+               return true; // Just "*" matches everything
            }
            
-           // Build detection context
-           let context = DetectionContext::from_path(path).await?;
+           let mut url_remainder = url;
            
-           // Sort patterns by priority (highest first)
-           let mut patterns = self.patterns.clone();
-           patterns.sort_by_key(|p| std::cmp::Reverse(p.priority));
-           
-           // Find first matching pattern
-           for pattern in patterns {
-               let mut all_match = true;
-               
-               for matcher in &pattern.matchers {
-                   if !matcher.evaluate(&context).await? {
-                       all_match = false;
-                       break;
-                   }
+           for (i, part) in parts.iter().enumerate() {
+               if part.is_empty() {
+                   continue; // Skip empty parts from consecutive *
                }
                
-               if all_match {
-                   // Cache the result
-                   self.cache.set(&context.repo_root, &pattern.name);
-                   
-                   let elapsed = start.elapsed();
-                   if elapsed > Duration::from_millis(100) {
-                       warn!("Slow detection: {:?}ms", elapsed.as_millis());
+               if i == 0 {
+                   // First part must match start
+                   if !url_remainder.starts_with(part) {
+                       return false;
                    }
-                   
-                   return Ok(Some(pattern.name));
+                   url_remainder = &url_remainder[part.len()..];
+               } else if i == parts.len() - 1 && !pattern.ends_with('*') {
+                   // Last part must match end (if no trailing *)
+                   return url_remainder.ends_with(part);
+               } else {
+                   // Middle parts can appear anywhere
+                   if let Some(pos) = url_remainder.find(part) {
+                       url_remainder = &url_remainder[pos + part.len()..];
+                   } else {
+                       return false;
+                   }
                }
            }
            
-           Ok(None)  // No pattern matched
+           true
        }
    }
    ```
+   
+   ⚠️ **Common Mistake**: Not handling edge cases like "**" or "*abc*def*"
+   ✅ **Solution**: Test thoroughly with various patterns
 
-#### Task 5.1.2: Pattern Matching Implementation (8 hours)
-
-💡 **Junior Dev Concept**: Pattern Matching
-**Glob patterns**: `*` matches any chars, `**` matches dirs recursively
-**Examples**:
-- `~/work/**` matches any path under ~/work/
-- `github.com:company/*` matches company repos
-- `*.rs` matches Rust files
-
-Implement flexible matchers:
-
-```rust
-impl Matcher {
-    pub fn evaluate(&self, context: &DetectionContext) -> Result<bool> {
-        match self {
-            Matcher::Remote { pattern } => {
-                let remotes = context.git_remotes()?;
-                Ok(remotes.iter().any(|r| glob_match(pattern, r)))
-            }
-            Matcher::Path { glob } => {
-                Ok(glob_match(glob, context.path.to_str().unwrap()))
-            }
-            Matcher::Directory { pattern } => {
-                if let Some(dir_name) = context.path.file_name() {
-                    Ok(glob_match(pattern, dir_name.to_str().unwrap()))
-                } else {
-                    Ok(false)
-                }
-            }
-            Matcher::GitConfig { key, value } => {
-                let config_value = context.git_config(key)?;
-                Ok(config_value.as_deref() == Some(value))
-            }
-            Matcher::Custom(func) => Ok(func(context.path)),
-        }
-    }
-}
-```
-
-**Pattern Examples**:
-```toml
-[[detection_patterns]]
-name = "work"
-priority = 10
-remote = "github.com:mycompany/*"
-
-[[detection_patterns]]
-name = "personal"
-priority = 5
-path = "~/personal/**"
-
-[[detection_patterns]]
-name = "opensource"
-priority = 8
-remote = "github.com:*"
-directory = "oss-*"
-```
-
-**Step-by-Step Implementation**:
-
-1. **Implement glob matching** (2 hours)
+3. **Write Comprehensive Tests** (1.5 hours)
    ```rust
-   use glob_match::glob_match;
-   
-   /// Match with glob pattern, handling home directory expansion
-   pub fn glob_match_path(pattern: &str, path: &str) -> bool {
-       // Expand ~ to home directory
-       let pattern = expand_tilde(pattern);
-       let path = expand_tilde(path);
-       
-       // Normalize paths for comparison
-       let pattern = normalize_path(&pattern);
-       let path = normalize_path(&path);
-       
-       glob_match(&pattern, &path)
-   }
-   
-   fn expand_tilde(path: &str) -> String {
-       if path.starts_with("~/") {
-           if let Some(home) = dirs::home_dir() {
-               return path.replacen("~", &home.to_string_lossy(), 1);
-           }
-       }
-       path.to_string()
-   }
-   
-   fn normalize_path(path: &str) -> String {
-       // Convert backslashes to forward slashes
-       path.replace('\\', "/")
-   }
-   
    #[cfg(test)]
    mod tests {
        use super::*;
        
        #[test]
-       fn test_home_expansion() {
-           // This will match paths like /home/user/work/project
-           assert!(glob_match_path("~/work/**", "/home/user/work/project/src"));
+       fn test_exact_matching() {
+           let pattern = UrlPattern::Exact("github.com/myorg/repo".to_string());
+           
+           assert!(pattern.matches("github.com/myorg/repo"));
+           assert!(!pattern.matches("github.com/myorg/other"));
+           assert!(!pattern.matches("gitlab.com/myorg/repo"));
+       }
+       
+       #[test]
+       fn test_wildcard_matching() {
+           // Test cases with expected results
+           let test_cases = vec![
+               ("github.com/*", "github.com/anything", true),
+               ("github.com/*", "gitlab.com/anything", false),
+               ("*/myorg/*", "github.com/myorg/repo", true),
+               ("*/myorg/*", "gitlab.com/myorg/repo", true),
+               ("github.com/*/api", "github.com/org/api", true),
+               ("github.com/*/api", "github.com/org/web", false),
+           ];
+           
+           for (pattern_str, url, expected) in test_cases {
+               let pattern = UrlPattern::from_str(pattern_str).unwrap();
+               assert_eq!(
+                   pattern.matches(url), 
+                   expected,
+                   "Pattern '{}' matching '{}' expected {}", 
+                   pattern_str, url, expected
+               );
+           }
+       }
+       
+       #[test]
+       fn test_regex_matching() {
+           let pattern = UrlPattern::from_str(r"^github\.com/myorg/project-\d+$").unwrap();
+           
+           assert!(pattern.matches("github.com/myorg/project-123"));
+           assert!(pattern.matches("github.com/myorg/project-1"));
+           assert!(!pattern.matches("github.com/myorg/project-abc"));
+           assert!(!pattern.matches("github.com/myorg/project-"));
        }
    }
    ```
-   
-   💡 **Path Normalization**: Critical for cross-platform!
 
-2. **Implement remote matching** (2 hours)
+**Testing Your Work**:
+```bash
+# Run pattern tests
+cargo test pattern::tests
+
+# Test with examples
+cargo run --example pattern_matching
+
+# Benchmark pattern performance
+cargo bench pattern_matching
+```
+
+**Debugging Guide**:
+
+**Issue**: Wildcard pattern not matching expected URLs
+**Debug Steps**:
+1. Print pattern parts: `dbg!(pattern.split('*').collect::<Vec<_>>())`
+2. Add logging in matches_wildcard
+3. Test with simpler patterns first
+
+**Issue**: Regex pattern fails to compile
+**Solution**: Test regex at [regex101.com](https://regex101.com/) first
+
+**When You're Stuck**:
+1. Try the example: `examples/patterns/wildcard_demo.rs`
+2. Use println! debugging in matches_wildcard
+3. Ask in Slack: #rust-patterns channel
+
+#### Task 5A.1.2: Pattern Priority System (4 hours)
+
+💡 **Junior Dev Concept**: Priority Systems
+**What it is**: Determining which pattern to use when multiple match
+**Why needed**: User might have overlapping patterns
+**Real Example**: Both "github.com/*" and "github.com/work/*" match
+
+**Implementation**:
+
+1. **Add Priority to Patterns** (1.5 hours)
    ```rust
-   /// Match Git remote URLs with patterns
-   pub fn match_remote(pattern: &str, remote_url: &str) -> bool {
-       // Normalize different remote formats:
-       // - https://github.com/user/repo.git
-       // - git@github.com:user/repo.git
-       // - ssh://git@github.com/user/repo.git
-       
-       let normalized = normalize_remote_url(remote_url);
-       glob_match(pattern, &normalized)
+   /// Pattern with priority for ordering
+   #[derive(Debug, Clone)]
+   pub struct PrioritizedPattern {
+       pub pattern: UrlPattern,
+       pub priority: i32,
+       pub profile_name: String,
    }
    
-   fn normalize_remote_url(url: &str) -> String {
-       // Remove protocol
-       let url = url.trim_start_matches("https://")
-           .trim_start_matches("http://")
-           .trim_start_matches("ssh://")
-           .trim_start_matches("git@");
-       
-       // Convert git@host:path to host/path
-       let url = url.replace(':', "/");
-       
-       // Remove .git suffix
-       url.trim_end_matches(".git").to_string()
+   impl PrioritizedPattern {
+       pub fn new(pattern: UrlPattern, priority: i32, profile_name: String) -> Self {
+           Self { pattern, priority, profile_name }
+       }
    }
    
-   #[test]
-   fn test_remote_normalization() {
-       assert_eq!(
-           normalize_remote_url("git@github.com:rust-lang/rust.git"),
-           "github.com/rust-lang/rust"
-       );
-       assert_eq!(
-           normalize_remote_url("https://github.com/rust-lang/rust.git"),
-           "github.com/rust-lang/rust"
-       );
+   /// Collection of patterns with matching logic
+   pub struct PatternMatcher {
+       patterns: Vec<PrioritizedPattern>,
+   }
+   
+   impl PatternMatcher {
+       pub fn new() -> Self {
+           Self { patterns: Vec::new() }
+       }
+       
+       pub fn add_pattern(&mut self, pattern: PrioritizedPattern) {
+           self.patterns.push(pattern);
+           // Keep sorted by priority (highest first)
+           self.patterns.sort_by(|a, b| b.priority.cmp(&a.priority));
+       }
+       
+       /// Find all matching patterns for a URL
+       pub fn find_matches(&self, url: &str) -> Vec<&PrioritizedPattern> {
+           self.patterns
+               .iter()
+               .filter(|p| p.pattern.matches(url))
+               .collect()
+       }
+       
+       /// Get best match (highest priority)
+       pub fn best_match(&self, url: &str) -> Option<&PrioritizedPattern> {
+           self.find_matches(url).into_iter().next()
+       }
    }
    ```
-   
-   ⚠️ **Common Bug**: Different Git remote formats
-   ✅ **Solution**: Normalize before matching
 
-3. **Create pattern configuration** (2 hours)
+2. **Pattern Specificity Calculation** (1.5 hours)
    ```rust
-   use serde::{Deserialize, Serialize};
+   impl UrlPattern {
+       /// Calculate specificity score (higher = more specific)
+       pub fn specificity(&self) -> u32 {
+           match self {
+               UrlPattern::Exact(_) => 1000,  // Most specific
+               UrlPattern::Regex(_) => 500,   // Medium specific
+               UrlPattern::Wildcard(p) => {
+                   // More segments = more specific
+                   let segments = p.split('/').count() as u32;
+                   let wildcards = p.matches('*').count() as u32;
+                   segments * 10 - wildcards * 5
+               }
+           }
+       }
+   }
+   ```
+
+3. **Integration Tests** (1 hour)
+   ```rust
+   #[test]
+   fn test_pattern_priority() {
+       let mut matcher = PatternMatcher::new();
+       
+       // Add patterns with different priorities
+       matcher.add_pattern(PrioritizedPattern::new(
+           UrlPattern::from_str("github.com/*").unwrap(),
+           10,
+           "personal".to_string(),
+       ));
+       
+       matcher.add_pattern(PrioritizedPattern::new(
+           UrlPattern::from_str("github.com/work/*").unwrap(),
+           20,
+           "work".to_string(),
+       ));
+       
+       // More specific pattern should win
+       let best = matcher.best_match("github.com/work/project").unwrap();
+       assert_eq!(best.profile_name, "work");
+   }
+   ```
+
+---
+
+### 🛑 CHECKPOINT 5.1: Pattern System Complete
+
+#### ⚠️ MANDATORY STOP POINT ⚠️
+
+**Workload**: 16 hours + 4 hours review = 20 hours total
+
+**Pre-Checkpoint Checklist**:
+- [ ] Pattern types (Exact, Wildcard, Regex) implemented
+- [ ] Pattern matching works correctly
+- [ ] Priority system functioning
+- [ ] All tests passing
+- [ ] Performance acceptable (<1ms per match)
+
+**Review Focus**:
+- Pattern matching correctness
+- Edge case handling
+- Performance characteristics
+
+---
+
+### 5A.2 Repository Detection (12 hours)
+
+#### Task 5A.2.1: Git Remote Detection (6 hours)
+
+💡 **Junior Dev Concept**: Git Remotes
+**What it is**: Git's record of where to push/pull code
+**Why we need it**: To know which profile to suggest
+**Real Example**: `origin` pointing to your GitHub fork
+
+**Prerequisites**:
+- [ ] Understand: Git remote concepts
+- [ ] Practice: `git remote` commands
+- [ ] Read: git2-rs documentation on remotes
+
+**Implementation**:
+
+1. **Create Remote Detector** (2 hours)
+   ```rust
+   // src/git/remote.rs
    
-   #[derive(Debug, Clone, Deserialize, Serialize)]
-   pub struct PatternConfig {
-       pub name: String,
-       pub priority: Option<u8>,  // Default: 10
-       
-       // Matcher fields (at least one required)
-       #[serde(skip_serializing_if = "Option::is_none")]
-       pub remote: Option<String>,
-       
-       #[serde(skip_serializing_if = "Option::is_none")]
-       pub path: Option<String>,
-       
-       #[serde(skip_serializing_if = "Option::is_none")]
-       pub directory: Option<String>,
-       
-       #[serde(skip_serializing_if = "Option::is_none")]
-       pub git_config: Option<HashMap<String, String>>,
+   use git2::{Repository, Remote};
+   use std::path::Path;
+   
+   /// Detects remotes in a Git repository
+   pub struct RemoteDetector {
+       repo: Repository,
    }
    
-   impl PatternConfig {
-       pub fn to_detection_pattern(&self) -> Result<DetectionPattern> {
-           let mut matchers = Vec::new();
+   impl RemoteDetector {
+       /// Open repository at path
+       pub fn open(path: &Path) -> Result<Self, DetectorError> {
+           let repo = Repository::open(path)
+               .map_err(|e| DetectorError::NotARepository(e.to_string()))?;
+           Ok(Self { repo })
+       }
+       
+       /// Get all remote URLs
+       pub fn get_remote_urls(&self) -> Result<Vec<(String, String)>, DetectorError> {
+           let mut urls = Vec::new();
            
-           if let Some(remote) = &self.remote {
-               matchers.push(Matcher::Remote { 
-                   pattern: remote.clone() 
-               });
-           }
+           let remotes = self.repo.remotes()
+               .map_err(|e| DetectorError::GitError(e.to_string()))?;
            
-           if let Some(path) = &self.path {
-               matchers.push(Matcher::Path { 
-                   glob: path.clone() 
-               });
-           }
-           
-           if let Some(dir) = &self.directory {
-               matchers.push(Matcher::Directory { 
-                   pattern: dir.clone() 
-               });
-           }
-           
-           if let Some(configs) = &self.git_config {
-               for (key, value) in configs {
-                   matchers.push(Matcher::GitConfig {
-                       key: key.clone(),
-                       value: value.clone(),
-                   });
+           for remote_name in remotes.iter() {
+               if let Some(name) = remote_name {
+                   let remote = self.repo.find_remote(name)
+                       .map_err(|e| DetectorError::GitError(e.to_string()))?;
+                   
+                   if let Some(url) = remote.url() {
+                       urls.push((name.to_string(), url.to_string()));
+                   }
                }
            }
            
-           if matchers.is_empty() {
-               return Err(ConfigError::NoMatchers);
-           }
-           
-           Ok(DetectionPattern {
-               name: self.name.clone(),
-               priority: self.priority.unwrap_or(10),
-               matchers,
-           })
-       }
-   }
-   ```
-
-4. **Load patterns from config** (2 hours)
-   ```rust
-   impl ProfileDetector {
-       pub fn from_config(config: &AppConfig) -> Result<Self> {
-           let mut patterns = Vec::new();
-           
-           // Load user-defined patterns
-           for pattern_config in &config.detection_patterns {
-               patterns.push(pattern_config.to_detection_pattern()?);
-           }
-           
-           // Add default patterns if none defined
-           if patterns.is_empty() {
-               patterns.extend(Self::default_patterns());
-           }
-           
-           Ok(Self {
-               patterns,
-               cache: DetectionCache::new(),
-               profile_manager: Arc::new(ProfileManager::new()),
-           })
+           Ok(urls)
        }
        
-       fn default_patterns() -> Vec<DetectionPattern> {
-           vec![
-               // Work profile for work directory
-               DetectionPattern {
-                   name: "work".to_string(),
-                   priority: 10,
-                   matchers: vec![
-                       Matcher::Path { glob: "~/work/**".to_string() }
-                   ],
-               },
-               // Personal profile for personal directory
-               DetectionPattern {
-                   name: "personal".to_string(),
-                   priority: 10,
-                   matchers: vec![
-                       Matcher::Path { glob: "~/personal/**".to_string() }
-                   ],
-               },
-           ]
+       /// Get URL for specific remote (usually "origin")
+       pub fn get_remote_url(&self, name: &str) -> Result<Option<String>, DetectorError> {
+           match self.repo.find_remote(name) {
+               Ok(remote) => Ok(remote.url().map(|s| s.to_string())),
+               Err(_) => Ok(None),
+           }
        }
    }
    ```
 
-#### Task 5.1.3: Performance Optimization (5 hours)
+2. **URL Normalization** (2 hours)
+   ```rust
+   /// Normalize Git URLs for consistent matching
+   pub fn normalize_git_url(url: &str) -> String {
+       let mut normalized = url.to_string();
+       
+       // Remove protocol
+       if let Some(pos) = normalized.find("://") {
+           normalized = normalized[pos + 3..].to_string();
+       }
+       
+       // Remove git@ prefix
+       if normalized.starts_with("git@") {
+           normalized = normalized[4..].to_string();
+           // Convert : to / after hostname
+           if let Some(pos) = normalized.find(':') {
+               normalized.replace_range(pos..pos + 1, "/");
+           }
+       }
+       
+       // Remove .git suffix
+       if normalized.ends_with(".git") {
+           normalized.truncate(normalized.len() - 4);
+       }
+       
+       // Remove trailing slash
+       normalized.trim_end_matches('/').to_string()
+   }
+   
+   #[test]
+   fn test_url_normalization() {
+       let cases = vec![
+           ("https://github.com/user/repo.git", "github.com/user/repo"),
+           ("git@github.com:user/repo.git", "github.com/user/repo"),
+           ("ssh://git@github.com/user/repo", "github.com/user/repo"),
+           ("https://github.com/user/repo/", "github.com/user/repo"),
+       ];
+       
+       for (input, expected) in cases {
+           assert_eq!(normalize_git_url(input), expected);
+       }
+   }
+   ```
 
-Optimize for speed:
+3. **Integration with Pattern Matcher** (2 hours)
+   ```rust
+   /// Auto-detect profile based on repository
+   pub struct ProfileAutoDetector {
+       pattern_matcher: PatternMatcher,
+   }
+   
+   impl ProfileAutoDetector {
+       pub fn new(profiles: Vec<Profile>) -> Self {
+           let mut matcher = PatternMatcher::new();
+           
+           // Build patterns from profiles
+           for profile in profiles {
+               for remote in &profile.remotes {
+                   if let Ok(pattern) = UrlPattern::from_str(&remote.pattern) {
+                       matcher.add_pattern(PrioritizedPattern::new(
+                           pattern,
+                           remote.priority,
+                           profile.name.clone(),
+                       ));
+                   }
+               }
+           }
+           
+           Self { pattern_matcher: matcher }
+       }
+       
+       /// Detect profile for repository at path
+       pub fn detect(&self, repo_path: &Path) -> Result<Option<String>, DetectorError> {
+           let detector = RemoteDetector::open(repo_path)?;
+           let urls = detector.get_remote_urls()?;
+           
+           // Check each remote URL
+           for (_, url) in urls {
+               let normalized = normalize_git_url(&url);
+               
+               if let Some(match_) = self.pattern_matcher.best_match(&normalized) {
+                   return Ok(Some(match_.profile_name.clone()));
+               }
+           }
+           
+           Ok(None)
+       }
+   }
+   ```
 
-```rust
-pub struct DetectionCache {
-    entries: DashMap<PathBuf, CacheEntry>,
-    ttl: Duration,
-}
-
-struct CacheEntry {
-    profile: String,
-    detected_at: Instant,
-    repo_root: PathBuf,
-}
-
-impl DetectionCache {
-    pub fn get(&self, path: &Path) -> Option<String> {
-        // Find repo root for path
-        let repo_root = find_git_root(path).ok()?;
-        
-        // Check if we have a valid cache entry
-        if let Some(entry) = self.entries.get(&repo_root) {
-            if entry.detected_at.elapsed() < self.ttl {
-                return Some(entry.profile.clone());
-            }
-        }
-        None
-    }
-}
-```
-
-**Optimization targets**:
-- LRU cache with 1000 entry limit
-- 5-minute TTL for entries
-- Parallel pattern evaluation
-- Early termination on match
-
-#### Task 5.1.4: Integration with Shell (2 hours)
-
-Shell hooks for automatic switching:
-
+**Testing Your Work**:
 ```bash
-# Bash/Zsh integration
-git_setup_auto_detect() {
-    local profile=$(git-setup detect --path "$PWD")
-    if [[ -n "$profile" ]]; then
-        git-setup switch "$profile" --quiet
-    fi
-}
+# Test with a real repository
+cd ~/your-project
+cargo run --example detect_profile .
 
-# Add to PROMPT_COMMAND or precmd
+# Run detection tests
+cargo test detection::tests
 ```
 
 ---
 
-## 🛑 CHECKPOINT 1: Auto-Detection Complete
+### 🛑 CHECKPOINT 5.2: Detection System Complete
 
-### ⚠️ MANDATORY STOP POINT ⚠️
+#### ⚠️ MANDATORY STOP POINT ⚠️
 
-**DO NOT PROCEED** without performance verification.
+**Workload**: 12 hours + 4 hours review = 16 hours total
 
-### Pre-Checkpoint Checklist
-
-- [ ] Detection completes in <100ms
-- [ ] Pattern matching works for all types
-- [ ] Cache invalidation tested
-- [ ] Nested repositories handled
-- [ ] Submodules detected correctly
-- [ ] Shell integration documented
-- [ ] Performance benchmarks passing
-
-### Performance Testing
-
-```bash
-# Run detection benchmarks
-cargo bench --bench detection_performance
-
-# Test with complex repository
-git clone --recursive https://github.com/rust-lang/rust
-cd rust
-time git-setup detect  # Should be <100ms
-
-# Test cache effectiveness
-for i in {1..100}; do
-    time git-setup detect
-done | grep real  # Should show cache working
-```
-
-### Review Requirements
-
-#### Performance (Tech Lead)
-- [ ] <100ms on all test cases
-- [ ] Cache hit rate >90%
-- [ ] Memory usage acceptable
-- [ ] No performance regression
-
-#### Functionality (Senior Dev)
-- [ ] All pattern types working
-- [ ] Priority system correct
-- [ ] Edge cases handled
-- [ ] Configuration flexible
-
-### Consequences of Skipping
-
-- Slow detection frustrates users
-- Incorrect profile detection
-- Shell integration unusable
-- Performance degrades over time
+**Pre-Checkpoint Checklist**:
+- [ ] Remote URL detection working
+- [ ] URL normalization handles all formats
+- [ ] Integration with patterns complete
+- [ ] Tests cover various Git configurations
 
 ---
 
-### 5.2 Multi-Method Signing Configuration (25 hours)
+## Week 2: Auto-Detection Integration
 
-**Complexity**: High - Multiple signing protocols
-**Files**: `src/signing/mod.rs`, `src/signing/ssh.rs`, `src/signing/gpg.rs`, `src/signing/x509.rs`, `src/signing/gitsign.rs`
+### 5A.3 User Interaction Flow (20 hours)
 
-#### Task 5.2.1: Signing Architecture (5 hours)
+#### Task 5A.3.1: Confirmation Dialog Implementation (8 hours)
 
-💡 **Junior Dev Concept**: Git Commit Signing
-**What it is**: Cryptographically prove YOU made a commit
-**Methods**: SSH (newest), GPG (traditional), x509 (enterprise), gitsign (keyless)
-**Why multiple**: Different organizations use different methods
+💡 **Junior Dev Concept**: User Confirmation Flow
+**What it is**: Asking users before making changes
+**Why important**: Never surprise users with automatic actions
+**Real Example**: "Detected work profile for this repo. Use it? [Y/n]"
 
-Unified signing framework:
+**Prerequisites**:
+- [ ] Review: CLI prompt patterns
+- [ ] Understand: User experience principles
+- [ ] Practice: Terminal input handling
 
-```rust
-pub trait SigningMethod: Send + Sync {
-    fn name(&self) -> &str;
-    fn configure(&self, git_config: &mut GitConfig) -> Result<()>;
-    fn verify_setup(&self) -> Result<SigningStatus>;
-    fn find_keys(&self) -> Result<Vec<SigningKey>>;
-}
-
-pub struct SigningConfig {
-    pub format: SigningFormat,
-    pub key: SigningKeyRef,
-    pub program: Option<String>,
-}
-
-pub enum SigningFormat {
-    Ssh,
-    Gpg,
-    X509,
-}
-
-pub enum SigningKeyRef {
-    /// Direct key ID/fingerprint
-    Direct(String),
-    /// Key file path
-    File(PathBuf),
-    /// 1Password reference
-    OnePassword(String),
-    /// Environment variable
-    Environment(String),
-}
+**Visual Flow**:
 ```
-
-#### Task 5.2.2: SSH Signing Implementation (6 hours)
-
-💡 **Junior Dev Concept**: SSH Signing (New!)
-**What it is**: Use your SSH key to sign commits (since Git 2.34)
-**Advantages**: Most devs already have SSH keys, works with 1Password
-**Setup**: Tell Git to use SSH format and which key
-
-Modern SSH commit signing:
-
-```rust
-pub struct SshSigning {
-    ssh_agent: SshAgent,
-    op_integration: Option<Arc<OpCli>>,
-}
-
-impl SigningMethod for SshSigning {
-    fn configure(&self, git_config: &mut GitConfig) -> Result<()> {
-        git_config.set("gpg.format", "ssh")?;
-        git_config.set("user.signingkey", &self.key_path())?;
-        
-        if let Some(allowed_signers) = self.find_allowed_signers()? {
-            git_config.set("gpg.ssh.allowedSignersFile", &allowed_signers)?;
-        }
-        
-        // Use 1Password for signing if available
-        if self.op_integration.is_some() {
-            git_config.set("gpg.ssh.program", "op-ssh-sign")?;
-        }
-        
-        git_config.set("commit.gpgsign", "true")?;
-        Ok(())
-    }
-    
-    fn find_keys(&self) -> Result<Vec<SigningKey>> {
-        let mut keys = vec![];
-        
-        // 1. Check SSH agent
-        keys.extend(self.ssh_agent.list_keys()?);
-        
-        // 2. Check 1Password
-        if let Some(op) = &self.op_integration {
-            keys.extend(op.list_ssh_keys().await?);
-        }
-        
-        // 3. Check ~/.ssh/
-        keys.extend(self.scan_ssh_dir()?);
-        
-        Ok(keys)
-    }
-}
+User enters repo     System detects       User confirms       Profile applied
+────────────────     ──────────────      ─────────────      ───────────────
+$ cd work-project -> Analyze remotes  -> Show suggestion -> Configure Git
+                     Match patterns       "Use 'work'?"      Success message
+                     Find best match      [Y/n]: y          ✓ Applied
 ```
 
 **Step-by-Step Implementation**:
 
-1. **Understand SSH signing config** (1 hour)
+1. **Create Confirmation UI Trait** (2 hours)
    ```rust
-   /// Git configuration for SSH signing:
-   /// - gpg.format = "ssh" (use SSH instead of GPG)
-   /// - user.signingkey = "/path/to/key.pub" or "ssh-rsa AAAA..."
-   /// - gpg.ssh.allowedSignersFile = "/path/to/allowed_signers"
-   /// - gpg.ssh.program = "ssh-keygen" (or "op-ssh-sign" for 1Password)
-   /// - commit.gpgsign = true (sign all commits)
+   // src/ui/confirmation.rs
    
-   pub struct SshSigningConfig {
-       pub key_path: Option<PathBuf>,
-       pub key_data: Option<String>,  // Raw public key
-       pub allowed_signers_file: Option<PathBuf>,
-       pub ssh_program: String,
-       pub sign_commits: bool,
+   use std::io::{self, Write};
+   use crossterm::style::{Color, Print, ResetColor, SetForegroundColor};
+   
+   /// Trait for user confirmations across CLI and TUI
+   pub trait ConfirmationUI {
+       /// Ask for yes/no confirmation
+       fn confirm(&mut self, message: &str, default: bool) -> Result<bool, UiError>;
+       
+       /// Show options and get selection
+       fn select_option(&mut self, message: &str, options: &[String]) -> Result<usize, UiError>;
    }
-   ```
    
-   💡 **Config Priority**: key_path preferred over key_data
-
-2. **Implement SSH agent integration** (2 hours)
-   ```rust
-   use std::process::Command;
+   /// CLI implementation of confirmation
+   pub struct CliConfirmation;
    
-   pub struct SshAgent;
-   
-   impl SshAgent {
-       pub fn list_keys(&self) -> Result<Vec<SshKey>> {
-           // Run ssh-add -L to list keys in agent
-           let output = Command::new("ssh-add")
-               .arg("-L")
-               .output()?;
+   impl ConfirmationUI for CliConfirmation {
+       fn confirm(&mut self, message: &str, default: bool) -> Result<bool, UiError> {
+           // Color the message for visibility
+           execute!(
+               io::stdout(),
+               SetForegroundColor(Color::Cyan),
+               Print(message),
+               ResetColor
+           )?;
            
-           if !output.status.success() {
-               // No agent or no keys
-               return Ok(Vec::new());
-           }
+           // Show default
+           let prompt = if default { " [Y/n]: " } else { " [y/N]: " };
+           print!("{}", prompt);
+           io::stdout().flush()?;
            
-           let stdout = String::from_utf8_lossy(&output.stdout);
-           let mut keys = Vec::new();
+           // Read input
+           let mut input = String::new();
+           io::stdin().read_line(&mut input)?;
            
-           for line in stdout.lines() {
-               if let Ok((key_type, fingerprint)) = parse_public_key(line) {
-                   keys.push(SshKey {
-                       source: KeySource::Agent,
-                       key_type,
-                       fingerprint,
-                       public_key: line.to_string(),
-                       path: None,
-                   });
+           // Parse response
+           let response = input.trim().to_lowercase();
+           Ok(match response.as_str() {
+               "y" | "yes" => true,
+               "n" | "no" => false,
+               "" => default,
+               _ => {
+                   println!("Please answer 'y' or 'n'");
+                   self.confirm(message, default)?
                }
+           })
+       }
+       
+       fn select_option(&mut self, message: &str, options: &[String]) -> Result<usize, UiError> {
+           println!("{}", message);
+           
+           // Display options
+           for (i, option) in options.iter().enumerate() {
+               println!("  {}. {}", i + 1, option);
            }
            
-           Ok(keys)
-       }
-       
-       pub fn key_in_agent(&self, fingerprint: &str) -> Result<bool> {
-           let keys = self.list_keys()?;
-           Ok(keys.iter().any(|k| k.fingerprint == fingerprint))
-       }
-   }
-   ```
-   
-   ⚠️ **Common Issue**: ssh-agent not running
-   ✅ **Handle Gracefully**: Return empty list, don't error
-
-3. **Scan SSH directory** (2 hours)
-   ```rust
-   fn scan_ssh_dir(&self) -> Result<Vec<SshKey>> {
-       let ssh_dir = dirs::home_dir()
-           .ok_or(SigningError::NoHomeDir)?
-           .join(".ssh");
-       
-       if !ssh_dir.exists() {
-           return Ok(Vec::new());
-       }
-       
-       let mut keys = Vec::new();
-       
-       // Common SSH key patterns
-       let patterns = [
-           "id_*.pub",
-           "*_rsa.pub",
-           "*_ed25519.pub",
-           "*_ecdsa.pub",
-       ];
-       
-       for pattern in &patterns {
-           let glob_pattern = ssh_dir.join(pattern);
+           print!("Select (1-{}): ", options.len());
+           io::stdout().flush()?;
            
-           for entry in glob::glob(&glob_pattern.to_string_lossy())? {
-               let path = entry?;
-               
-               // Read public key
-               let content = fs::read_to_string(&path)?;
-               
-               if let Ok((key_type, fingerprint)) = parse_public_key(&content) {
-                   keys.push(SshKey {
-                       source: KeySource::File(path.clone()),
-                       key_type,
-                       fingerprint,
-                       public_key: content.trim().to_string(),
-                       path: Some(path),
-                   });
+           // Read selection
+           let mut input = String::new();
+           io::stdin().read_line(&mut input)?;
+           
+           // Parse selection
+           match input.trim().parse::<usize>() {
+               Ok(n) if n > 0 && n <= options.len() => Ok(n - 1),
+               _ => {
+                   println!("Invalid selection. Please try again.");
+                   self.select_option(message, options)?
                }
            }
        }
+   }
+   ```
+   
+   💡 **Design Pattern**: Trait allows swapping CLI/TUI implementations
+
+2. **Create Auto-Detection Flow** (3 hours)
+   ```rust
+   // src/profile/auto_detect.rs
+   
+   /// Handles the auto-detection user flow
+   pub struct AutoDetectionFlow {
+       detector: ProfileAutoDetector,
+       profile_manager: Box<dyn ProfileManager>,
+       ui: Box<dyn ConfirmationUI>,
+   }
+   
+   impl AutoDetectionFlow {
+       /// Run auto-detection for current directory
+       pub async fn run(&mut self) -> Result<Option<String>, FlowError> {
+           let current_dir = std::env::current_dir()?;
+           
+           // Check if already configured
+           if self.is_already_configured(&current_dir)? {
+               return Ok(None);
+           }
+           
+           // Detect profile
+           match self.detector.detect(&current_dir)? {
+               Some(profile_name) => {
+                   self.handle_detection(profile_name).await
+               }
+               None => {
+                   self.handle_no_detection().await
+               }
+           }
+       }
        
-       Ok(keys)
+       /// Handle when a profile is detected
+       async fn handle_detection(&mut self, profile_name: String) -> Result<Option<String>, FlowError> {
+           // Get profile details
+           let profile = self.profile_manager.get(&profile_name).await?;
+           
+           // Build confirmation message
+           let message = format!(
+               "🎯 Detected profile '{}' for this repository\n   Email: {}\n   Use this profile?",
+               profile.name,
+               profile.git.user_email
+           );
+           
+           if self.ui.confirm(&message, true)? {
+               // Apply profile
+               self.apply_profile(&profile_name).await?;
+               println!("✅ Profile '{}' applied successfully!", profile_name);
+               Ok(Some(profile_name))
+           } else {
+               // Offer alternatives
+               self.offer_alternatives().await
+           }
+       }
+       
+       /// Handle when no profile matches
+       async fn handle_no_detection(&mut self) -> Result<Option<String>, FlowError> {
+           if self.ui.confirm("No profile detected. Would you like to select one?", true)? {
+               self.manual_selection().await
+           } else {
+               Ok(None)
+           }
+       }
+       
+       /// Offer alternative profiles
+       async fn offer_alternatives(&mut self) -> Result<Option<String>, FlowError> {
+           let profiles = self.profile_manager.list().await?;
+           
+           if profiles.is_empty() {
+               println!("No profiles found. Create one with: git-setup profile create");
+               return Ok(None);
+           }
+           
+           // Add "None" option
+           let mut options = profiles.clone();
+           options.push("None (skip)".to_string());
+           
+           let selection = self.ui.select_option(
+               "Select a different profile:",
+               &options
+           )?;
+           
+           if selection < profiles.len() {
+               let profile_name = &profiles[selection];
+               self.apply_profile(profile_name).await?;
+               println!("✅ Profile '{}' applied successfully!", profile_name);
+               Ok(Some(profile_name.clone()))
+           } else {
+               Ok(None)
+           }
+       }
    }
    ```
 
-4. **Configure Git for SSH signing** (1 hour)
+3. **Integration with Git Hooks** (3 hours)
    ```rust
-   impl SigningMethod for SshSigning {
-       fn configure(&self, git_config: &mut GitConfig) -> Result<()> {
-           // Set SSH as signing format
-           git_config.set("gpg.format", "ssh")?;
+   /// Git hook integration for auto-detection
+   pub struct HookIntegration;
+   
+   impl HookIntegration {
+       /// Install post-checkout hook for auto-detection
+       pub fn install_hook(repo_path: &Path) -> Result<(), FlowError> {
+           let hook_path = repo_path.join(".git/hooks/post-checkout");
            
-           // Set signing key
-           match &self.selected_key {
-               Some(key) => {
-                   // Prefer file path if available
-                   if let Some(path) = &key.path {
-                       git_config.set("user.signingkey", path.to_str().unwrap())?;
-                   } else {
-                       // Use raw key data
-                       git_config.set("user.signingkey", &key.public_key)?;
-                   }
-               }
-               None => return Err(SigningError::NoKeySelected),
+           // Create hook script
+           let hook_content = r#"#!/bin/sh
+   # git-setup-rs auto-detection hook
+   # Runs after checkout to suggest profile
+   
+   # Only run on branch checkout (not file checkout)
+   if [ "$3" = "1" ]; then
+       git-setup detect --quiet 2>/dev/null || true
+   fi
+   "#;
+           
+           // Write hook file
+           fs::write(&hook_path, hook_content)?;
+           
+           // Make executable
+           #[cfg(unix)]
+           {
+               use std::os::unix::fs::PermissionsExt;
+               let mut perms = fs::metadata(&hook_path)?.permissions();
+               perms.set_mode(0o755);
+               fs::set_permissions(&hook_path, perms)?;
            }
-           
-           // Set up allowed signers file
-           let allowed_signers = self.setup_allowed_signers()?;
-           git_config.set("gpg.ssh.allowedSignersFile", &allowed_signers)?;
-           
-           // Use 1Password if available
-           if self.op_integration.is_some() && self.selected_key.as_ref()
-               .map(|k| k.source == KeySource::OnePassword)
-               .unwrap_or(false) {
-               git_config.set("gpg.ssh.program", "op-ssh-sign")?;
-           }
-           
-           // Enable signing
-           git_config.set("commit.gpgsign", "true")?;
-           git_config.set("tag.gpgsign", "true")?;
            
            Ok(())
        }
    }
    ```
 
-#### Task 5.2.3: GPG Signing Implementation (6 hours)
-
-Traditional GPG signing:
-
+**Testing Auto-Detection**:
 ```rust
-pub struct GpgSigning {
-    gpg_binary: PathBuf,
-}
-
-impl SigningMethod for GpgSigning {
-    fn configure(&self, git_config: &mut GitConfig) -> Result<()> {
-        git_config.set("gpg.format", "openpgp")?;
-        git_config.set("user.signingkey", &self.key_id)?;
-        git_config.set("gpg.program", &self.gpg_binary)?;
-        git_config.set("commit.gpgsign", "true")?;
-        Ok(())
-    }
+#[tokio::test]
+async fn test_auto_detection_flow() {
+    // Create test repo with remote
+    let test_repo = TestRepo::new();
+    test_repo.add_remote("origin", "https://github.com/work/project.git");
     
-    fn find_keys(&self) -> Result<Vec<SigningKey>> {
-        let output = Command::new(&self.gpg_binary)
-            .args(&["--list-secret-keys", "--with-colons"])
-            .output()?;
-        
-        self.parse_gpg_keys(&output.stdout)
-    }
-}
-```
-
-#### Task 5.2.4: x509 Signing Implementation (4 hours)
-
-S/MIME certificate signing:
-
-```rust
-pub struct X509Signing {
-    cert_path: PathBuf,
-}
-
-impl SigningMethod for X509Signing {
-    fn configure(&self, git_config: &mut GitConfig) -> Result<()> {
-        git_config.set("gpg.format", "x509")?;
-        git_config.set("user.signingkey", &self.cert_path)?;
-        git_config.set("gpg.x509.program", "smimesign")?;
-        git_config.set("commit.gpgsign", "true")?;
-        Ok(())
-    }
-}
-```
-
-#### Task 5.2.5: Gitsign Implementation (4 hours)
-
-Sigstore keyless signing:
-
-```rust
-pub struct GitsignSigning {
-    gitsign_binary: PathBuf,
-    fulcio_url: Option<String>,
-    rekor_url: Option<String>,
-}
-
-impl SigningMethod for GitsignSigning {
-    fn configure(&self, git_config: &mut GitConfig) -> Result<()> {
-        git_config.set("gpg.format", "gitsign")?;
-        git_config.set("gpg.gitsign.program", &self.gitsign_binary)?;
-        
-        if let Some(fulcio) = &self.fulcio_url {
-            git_config.set("gitsign.fulcio", fulcio)?;
-        }
-        
-        git_config.set("commit.gpgsign", "true")?;
-        git_config.set("tag.gpgsign", "true")?;
-        Ok(())
-    }
-}
-```
-
----
-
-## 🛑 CHECKPOINT 2: Signing Methods Complete
-
-### ⚠️ MANDATORY STOP POINT ⚠️
-
-**DO NOT PROCEED** without signing verification.
-
-### Pre-Checkpoint Checklist
-
-- [ ] SSH signing configuration working
-- [ ] GPG signing configuration working
-- [ ] x509 signing configuration working
-- [ ] Gitsign configuration working
-- [ ] No Git config conflicts
-- [ ] Key discovery finds all keys
-- [ ] Actual commit signing tested
-
-### Signing Verification
-
-```bash
-# Test SSH signing
-git-setup signing configure --method ssh
-echo "test" > test.txt
-git add test.txt
-git commit -m "Test SSH signing"
-git log --show-signature -1  # Should show SSH signature
-
-# Test GPG signing
-git-setup signing configure --method gpg
-git commit --amend -m "Test GPG signing"
-git log --show-signature -1  # Should show GPG signature
-
-# Verify no conflicts
-git config --list | grep -E "gpg\.|user\.signingkey|commit\.gpgsign"
-```
-
-### Review Requirements
-
-#### Functionality (Senior Dev)
-- [ ] All signing methods work
-- [ ] Configuration is correct
-- [ ] Key discovery complete
-- [ ] Method switching clean
-
-#### Security (Security Engineer)
-- [ ] No private keys exposed
-- [ ] Secure key selection
-- [ ] Proper Git configuration
-- [ ] No credential leaks
-
-### Consequences of Skipping
-
-- Broken commit signing
-- Security audit failure
-- User commits rejected
-- Complex troubleshooting
-
----
-
-### 5.3 Health Check System (20 hours)
-
-**Complexity**: Medium - Comprehensive diagnostics
-**Files**: `src/health/mod.rs`, `src/health/checks/*.rs`, `src/health/report.rs`
-
-#### Task 5.3.1: Health Check Framework (5 hours)
-
-💡 **Junior Dev Concept**: Health Checks
-**What it is**: Automated diagnostics to find configuration problems
-**Like**: `brew doctor` or `npm doctor` - finds and suggests fixes
-**Goal**: Users can self-diagnose issues before asking for help
-
-Extensible health check system:
-
-```rust
-#[async_trait]
-pub trait HealthCheck: Send + Sync {
-    fn name(&self) -> &str;
-    fn category(&self) -> CheckCategory;
-    async fn check(&self, context: &CheckContext) -> CheckResult;
-}
-
-pub enum CheckCategory {
-    Profile,
-    Git,
-    Signing,
-    System,
-    Integration,
-}
-
-pub struct CheckResult {
-    pub status: CheckStatus,
-    pub message: String,
-    pub details: Option<String>,
-    pub fix_hint: Option<String>,
-}
-
-pub enum CheckStatus {
-    Ok,
-    Warning(String),
-    Error(String),
-}
-
-pub struct HealthChecker {
-    checks: Vec<Box<dyn HealthCheck>>,
-    profile_manager: Arc<dyn ProfileManager>,
-}
-```
-
-#### Task 5.3.2: Core Health Checks (8 hours)
-
-💡 **Junior Dev Concept**: Check Categories
-**System**: Is Git/SSH/GPG installed and working?
-**Profile**: Are profiles valid and complete?
-**Integration**: Does 1Password/signing work?
-**Purpose**: Group related issues for easier fixing
-
-Implement essential checks:
-
-```rust
-pub struct GitVersionCheck;
-
-#[async_trait]
-impl HealthCheck for GitVersionCheck {
-    fn name(&self) -> &str { "Git Version" }
-    fn category(&self) -> CheckCategory { CheckCategory::System }
+    // Create mock UI that auto-confirms
+    let mut mock_ui = MockConfirmationUI::new();
+    mock_ui.expect_confirm()
+        .returning(|_, _| Ok(true));
     
-    async fn check(&self, _: &CheckContext) -> CheckResult {
-        match check_git_version() {
-            Ok(version) if version >= Version::new(2, 25, 0) => {
-                CheckResult::ok(format!("Git {} installed", version))
-            }
-            Ok(version) => {
-                CheckResult::warning(
-                    format!("Git {} is old", version),
-                    "Consider upgrading to Git 2.25+"
-                )
-            }
-            Err(e) => {
-                CheckResult::error(
-                    "Git not found",
-                    "Install Git: https://git-scm.com"
-                )
-            }
-        }
-    }
-}
-```
-
-**Check Categories**:
-1. **System Checks**
-   - Git version and configuration
-   - SSH agent status
-   - GPG availability
-   - 1Password CLI status
-
-2. **Profile Checks**
-   - Profile validity
-   - Configuration conflicts
-   - Missing dependencies
-   - Signing key availability
-
-3. **Integration Checks**
-   - 1Password connection
-   - SSH key access
-   - Network connectivity
-   - Permission issues
-
-**Step-by-Step Implementation**:
-
-1. **Implement Git checks** (2 hours)
-   ```rust
-   use semver::Version;
-   use std::process::Command;
-   
-   fn check_git_version() -> Result<Version> {
-       let output = Command::new("git")
-           .arg("--version")
-           .output()
-           .map_err(|_| HealthError::GitNotFound)?;
-       
-       if !output.status.success() {
-           return Err(HealthError::GitError);
-       }
-       
-       // Parse "git version 2.34.1" format
-       let version_str = String::from_utf8_lossy(&output.stdout);
-       let version_part = version_str
-           .strip_prefix("git version ")
-           .ok_or(HealthError::UnknownGitVersion)?
-           .split_whitespace()
-           .next()
-           .ok_or(HealthError::UnknownGitVersion)?;
-       
-       // Handle version strings like "2.34.1.windows.1"
-       let clean_version = version_part.split('.').take(3).collect::<Vec<_>>().join(".");
-       
-       Version::parse(&clean_version)
-           .map_err(|_| HealthError::UnknownGitVersion)
-   }
-   
-   pub struct GitConfigCheck;
-   
-   #[async_trait]
-   impl HealthCheck for GitConfigCheck {
-       fn name(&self) -> &str { "Git Configuration" }
-       fn category(&self) -> CheckCategory { CheckCategory::System }
-       
-       async fn check(&self, ctx: &CheckContext) -> CheckResult {
-           // Check if user.name and user.email are set
-           let config = match git2::Config::open_default() {
-               Ok(c) => c,
-               Err(_) => return CheckResult::error(
-                   "Cannot read Git config",
-                   "Check Git installation"
-               ),
-           };
-           
-           let mut issues = Vec::new();
-           
-           if config.get_string("user.name").is_err() {
-               issues.push("user.name not set");
-           }
-           
-           if config.get_string("user.email").is_err() {
-               issues.push("user.email not set");
-           }
-           
-           if issues.is_empty() {
-               CheckResult::ok("Git user configured")
-           } else {
-               CheckResult::warning(
-                   format!("Git config incomplete: {}", issues.join(", ")),
-                   "Run 'git-setup switch <profile>' to configure"
-               )
-           }
-       }
-   }
-   ```
-
-2. **Implement profile checks** (3 hours)
-   ```rust
-   pub struct ProfileValidityCheck {
-       profile_manager: Arc<dyn ProfileManager>,
-   }
-   
-   #[async_trait]
-   impl HealthCheck for ProfileValidityCheck {
-       fn name(&self) -> &str { "Profile Validity" }
-       fn category(&self) -> CheckCategory { CheckCategory::Profile }
-       
-       async fn check(&self, ctx: &CheckContext) -> CheckResult {
-           let profiles = match self.profile_manager.list().await {
-               Ok(p) => p,
-               Err(_) => return CheckResult::error(
-                   "Cannot read profiles",
-                   "Check ~/.config/git-setup/profiles/"
-               ),
-           };
-           
-           if profiles.is_empty() {
-               return CheckResult::warning(
-                   "No profiles found",
-                   "Run 'git-setup new' to create your first profile"
-               );
-           }
-           
-           let mut invalid = Vec::new();
-           
-           for profile in profiles {
-               if let Err(e) = profile.validate() {
-                   invalid.push(format!("{}: {}", profile.name, e));
-               }
-           }
-           
-           if invalid.is_empty() {
-               CheckResult::ok(format!("{} profiles valid", profiles.len()))
-           } else {
-               CheckResult::error(
-                   format!("Invalid profiles: {}", invalid.join(", ")),
-                   "Run 'git-setup edit <profile>' to fix"
-               )
-           }
-       }
-   }
-   ```
-
-3. **Implement signing checks** (2 hours)
-   ```rust
-   pub struct SigningKeyCheck {
-       signing_manager: Arc<SigningManager>,
-   }
-   
-   #[async_trait]
-   impl HealthCheck for SigningKeyCheck {
-       fn name(&self) -> &str { "Signing Keys" }
-       fn category(&self) -> CheckCategory { CheckCategory::Integration }
-       
-       async fn check(&self, ctx: &CheckContext) -> CheckResult {
-           // Check current Git signing configuration
-           let config = git2::Config::open_default()?;
-           
-           let format = config.get_string("gpg.format")
-               .unwrap_or_else(|_| "openpgp".to_string());
-           
-           let signing_key = match config.get_string("user.signingkey") {
-               Ok(key) => key,
-               Err(_) => return CheckResult::ok("Signing not configured"),
-           };
-           
-           // Verify key is available
-           match format.as_str() {
-               "ssh" => self.check_ssh_key(&signing_key).await,
-               "openpgp" | "gpg" => self.check_gpg_key(&signing_key).await,
-               "x509" => self.check_x509_cert(&signing_key).await,
-               _ => CheckResult::warning(
-                   format!("Unknown signing format: {}", format),
-                   "Check gpg.format configuration"
-               ),
-           }
-       }
-       
-       async fn check_ssh_key(&self, key: &str) -> CheckResult {
-           // Check if key exists (file or in agent)
-           if key.starts_with("op://") {
-               // 1Password reference
-               CheckResult::ok("Using 1Password SSH key")
-           } else if Path::new(key).exists() {
-               CheckResult::ok("SSH key file found")
-           } else if key.starts_with("ssh-") {
-               // Raw key, check if in agent
-               let agent = SshAgent::new();
-               if agent.key_in_agent(key).unwrap_or(false) {
-                   CheckResult::ok("SSH key in agent")
-               } else {
-                   CheckResult::warning(
-                       "SSH key not in agent",
-                       "Run 'ssh-add' to add key to agent"
-                   )
-               }
-           } else {
-               CheckResult::error(
-                   "SSH key not found",
-                   "Check user.signingkey configuration"
-               )
-           }
-       }
-   }
-   ```
-
-4. **Implement integration checks** (1 hour)
-   ```rust
-   pub struct OnePasswordCheck {
-       op_cli: Option<Arc<OpCli>>,
-   }
-   
-   #[async_trait]
-   impl HealthCheck for OnePasswordCheck {
-       fn name(&self) -> &str { "1Password Integration" }
-       fn category(&self) -> CheckCategory { CheckCategory::Integration }
-       
-       async fn check(&self, _: &CheckContext) -> CheckResult {
-           match OpCli::detect().await {
-               Ok(cli) => {
-                   if cli.authenticated {
-                       CheckResult::ok(format!("1Password CLI {} (authenticated)", cli.version))
-                   } else {
-                       CheckResult::warning(
-                           format!("1Password CLI {} (not authenticated)", cli.version),
-                           "Run 'op signin' to authenticate"
-                       )
-                   }
-               }
-               Err(OnePasswordError::CliNotFound) => {
-                   CheckResult::info(
-                       "1Password CLI not installed",
-                       "Optional: Install from https://1password.com/downloads/command-line/"
-                   )
-               }
-               Err(OnePasswordError::VersionTooOld { found, required }) => {
-                   CheckResult::warning(
-                       format!("1Password CLI {} is old (need {}+)", found, required),
-                       "Update 1Password CLI for full functionality"
-                   )
-               }
-               Err(e) => CheckResult::error(
-                   format!("1Password check failed: {}", e),
-                   "Check 1Password CLI installation"
-               ),
-           }
-       }
-   }
-   ```
-
-#### Task 5.3.3: Health Report Generation (5 hours)
-
-Beautiful health reports:
-
-```rust
-pub struct HealthReport {
-    pub timestamp: DateTime<Utc>,
-    pub profile: Option<String>,
-    pub results: Vec<CheckResult>,
-}
-
-impl HealthReport {
-    pub fn render(&self) -> String {
-        let mut output = String::new();
-        
-        // Summary
-        let (ok, warn, err) = self.count_by_status();
-        writeln!(output, "🏥 Health Check Report");
-        writeln!(output, "   Profile: {}", self.profile.as_deref().unwrap_or("none"));
-        writeln!(output, "   Status: {} ✓  {} ⚠  {} ✗", ok, warn, err);
-        writeln!(output);
-        
-        // Group by category
-        for category in CheckCategory::all() {
-            let results = self.filter_by_category(category);
-            if !results.is_empty() {
-                writeln!(output, "{}", category.display_name());
-                for result in results {
-                    writeln!(output, "  {}", result.format());
-                }
-            }
-        }
-        
-        output
-    }
-}
-```
-
-#### Task 5.3.4: Auto-fix Capabilities (2 hours)
-
-Simple fixes for common issues:
-
-```rust
-pub trait AutoFixable: HealthCheck {
-    async fn can_fix(&self, result: &CheckResult) -> bool;
-    async fn fix(&self, context: &CheckContext) -> Result<()>;
-}
-
-impl HealthChecker {
-    pub async fn fix_all(&self, context: &CheckContext) -> Result<Vec<FixResult>> {
-        let mut fixes = vec![];
-        
-        for check in &self.checks {
-            let result = check.check(context).await?;
-            
-            if let Some(fixable) = check.as_any().downcast_ref::<dyn AutoFixable>() {
-                if fixable.can_fix(&result).await {
-                    match fixable.fix(context).await {
-                        Ok(()) => fixes.push(FixResult::success(check.name())),
-                        Err(e) => fixes.push(FixResult::failed(check.name(), e)),
-                    }
-                }
-            }
-        }
-        
-        Ok(fixes)
-    }
-}
-```
-
----
-
-## 🛑 CHECKPOINT 3: Health System Complete
-
-### ⚠️ MANDATORY STOP POINT ⚠️
-
-**DO NOT PROCEED** without health check validation.
-
-### Pre-Checkpoint Checklist
-
-- [ ] All check categories implemented
-- [ ] Health report renders correctly
-- [ ] Fix suggestions helpful and accurate
-- [ ] Auto-fix works for simple issues
-- [ ] Performance <1s for all checks
-- [ ] No false positives in checks
-
-### Health Check Testing
-
-```bash
-# Run full health check
-git-setup doctor
-
-# Test specific categories
-git-setup doctor --category system
-git-setup doctor --category profile
-git-setup doctor --category integration
-
-# Test auto-fix
-git-setup doctor --fix
-
-# Verify performance
-time git-setup doctor --all
-```
-
-### Review Requirements
-
-#### Usefulness (Product Owner)
-- [ ] Diagnostics find real issues
-- [ ] Fix suggestions work
-- [ ] Output clear to users
-- [ ] Reduces support burden
-
-#### Technical (Tech Lead)
-- [ ] Extensible architecture
-- [ ] Performance acceptable
-- [ ] No false positives
-- [ ] Error handling robust
-
-### Consequences of Skipping
-
-- Users can't self-diagnose
-- Support burden increases
-- Configuration issues hidden
-- Poor user experience
-
----
-
-### 5.4 Remote Profile Import (15 hours)
-
-**Complexity**: Medium - Security critical
-**Files**: `src/import/remote.rs`, `src/import/verify.rs`
-
-#### Task 5.4.1: Remote Import Framework (4 hours)
-
-💡 **Junior Dev Concept**: Secure Remote Import
-**What it is**: Download profiles from URLs (like GitHub)
-**Security critical**: Must verify the profile is safe
-**Key measures**: HTTPS only, hash verification, domain whitelist
-
-Secure remote profile fetching:
-
-```rust
-pub struct RemoteImporter {
-    http_client: reqwest::Client,
-    profile_manager: Arc<dyn ProfileManager>,
-}
-
-impl RemoteImporter {
-    pub async fn import(&self, url: &Url, options: ImportOptions) -> Result<Profile> {
-        // 1. Validate URL
-        self.validate_url(url)?;
-        
-        // 2. Fetch content
-        let content = self.fetch_with_retry(url).await?;
-        
-        // 3. Verify integrity
-        if let Some(expected_hash) = &options.sha256 {
-            verify_sha256(&content, expected_hash)?;
-        }
-        
-        // 4. Parse and validate
-        let profile = Profile::from_toml(&content)?;
-        profile.validate()?;
-        
-        // 5. Import with conflict resolution
-        self.import_profile(profile, options).await
-    }
-}
-```
-
-#### Task 5.4.2: Security & Verification (6 hours)
-
-Implement security measures:
-
-```rust
-pub struct ImportOptions {
-    pub sha256: Option<String>,
-    pub signature: Option<String>,
-    pub trusted_domains: Vec<String>,
-    pub conflict_resolution: ConflictResolution,
-}
-
-impl RemoteImporter {
-    fn validate_url(&self, url: &Url) -> Result<()> {
-        // HTTPS only
-        if url.scheme() != "https" {
-            return Err(ImportError::InsecureProtocol);
-        }
-        
-        // Check trusted domains
-        if !self.is_trusted_domain(url.host_str().unwrap()) {
-            return Err(ImportError::UntrustedDomain);
-        }
-        
-        Ok(())
-    }
-    
-    async fn verify_signature(&self, content: &[u8], sig: &str) -> Result<()> {
-        // GPG signature verification
-        let temp_file = self.write_temp(content)?;
-        let sig_file = self.write_temp(sig.as_bytes())?;
-        
-        let status = Command::new("gpg")
-            .args(&["--verify", sig_file.path(), temp_file.path()])
-            .status()?;
-        
-        if !status.success() {
-            return Err(ImportError::InvalidSignature);
-        }
-        
-        Ok(())
-    }
-}
-```
-
-#### Task 5.4.3: Import Formats Support (3 hours)
-
-Support multiple formats:
-
-```rust
-pub enum ImportFormat {
-    GitSetupToml,      // Native format
-    OnePasswordAgent,  // agent.toml format
-    GitConfig,         // .gitconfig format
-    Json,              // JSON representation
-}
-
-impl RemoteImporter {
-    pub async fn import_any(&self, url: &Url) -> Result<Profile> {
-        let content = self.fetch(url).await?;
-        
-        // Detect format
-        let format = match url.path() {
-            p if p.ends_with(".toml") => self.detect_toml_format(&content)?,
-            p if p.ends_with(".json") => ImportFormat::Json,
-            p if p.ends_with(".gitconfig") => ImportFormat::GitConfig,
-            _ => self.detect_format(&content)?,
-        };
-        
-        // Convert to Profile
-        match format {
-            ImportFormat::GitSetupToml => Profile::from_toml(&content),
-            ImportFormat::OnePasswordAgent => self.convert_op_agent(&content),
-            ImportFormat::GitConfig => self.convert_gitconfig(&content),
-            ImportFormat::Json => Profile::from_json(&content),
-        }
-    }
-}
-```
-
-#### Task 5.4.4: Batch Import & Templates (2 hours)
-
-Template repositories support:
-
-```rust
-pub async fn import_template_repo(&self, repo_url: &str) -> Result<Vec<Profile>> {
-    // Clone or fetch template repository
-    let temp_dir = self.clone_templates(repo_url).await?;
-    
-    // Find all profile files
-    let profile_files = glob::glob(&format!("{}/**/*.toml", temp_dir.path()))?;
-    
-    // Import each profile
-    let mut profiles = vec![];
-    for path in profile_files {
-        let content = std::fs::read_to_string(path?)?;
-        if let Ok(profile) = Profile::from_toml(&content) {
-            profiles.push(profile);
-        }
-    }
-    
-    Ok(profiles)
-}
-```
-
----
-
-## 🛑 CHECKPOINT 4: Phase 5 Complete
-
-### ⚠️ MANDATORY STOP POINT ⚠️
-
-**DO NOT PROCEED** to Phase 6 without final review.
-
-### Pre-Checkpoint Checklist
-
-- [ ] Auto-detection <100ms verified
-- [ ] All signing methods tested
-- [ ] Health checks comprehensive
-- [ ] Remote import security verified
-- [ ] Documentation complete
-- [ ] Integration tests passing
-
-### Final Integration Testing
-
-```bash
-# Test detection with signing
-cd ~/work/project
-git-setup detect  # Should select work profile
-git config user.signingkey  # Should be configured
-
-# Test health check after changes
-git-setup doctor  # All green
-
-# Test secure import
-git-setup import https://github.com/company/git-profiles/work.toml \
-  --sha256 abc123...
-
-# Full workflow test
-./scripts/test-phase5-integration.sh
-```
-
-### Phase 5 Metrics
-
-| Metric | Target | Actual | Status |
-|--------|--------|--------|--------|
-| Detection Time | <100ms | ___ | ⬜ |
-| Health Check Time | <1s | ___ | ⬜ |
-| Signing Success | 100% | ___ | ⬜ |
-| Import Security | 100% | ___ | ⬜ |
-| Test Coverage | ≥80% | ___ | ⬜ |
-
-### Feature Matrix
-
-| Feature | SSH | GPG | x509 | Gitsign |
-|---------|-----|-----|------|------|
-| Key Discovery | ✅ | ✅ | ✅ | ✅ |
-| Configuration | ✅ | ✅ | ✅ | ✅ |
-| 1Password | ✅ | ✅ | ❌ | ❌ |
-| Verification | ✅ | ✅ | ✅ | ✅ |
-
-### Sign-offs Required
-
-- [ ] **Tech Lead**: Architecture sound
-- [ ] **Security**: Import security verified
-- [ ] **QA Lead**: All features tested
-- [ ] **Product Owner**: Advanced features working
-- [ ] **Performance**: Targets met
-
-### Handoff to Phase 6
-
-**What Phase 6 needs**:
-1. Performance baselines for optimization
-2. Cross-platform test cases
-3. Feature flags for platform-specific code
-4. Documentation for distribution
-
----
-
-## Testing Strategy
-
-### Pattern Testing
-```rust
-#[test]
-fn test_pattern_matching() {
-    let pattern = DetectionPattern {
-        name: "work",
-        matchers: vec![
-            Matcher::Remote { pattern: "github.com:company/*" },
-            Matcher::Path { glob: "**/work/**" },
-        ],
-    };
-    
-    assert!(pattern.matches("github.com:company/project"));
-    assert!(pattern.matches("/home/user/work/project"));
-    assert!(!pattern.matches("github.com:personal/project"));
-}
-```
-
-### Signing Integration Tests
-- Mock Git commands
-- Test configuration generation
-- Verify no conflicts
-- Test key discovery
-
-### Health Check Tests
-- Simulate various failure modes
-- Test fix suggestions
-- Verify performance targets
-- Test report formatting
-
-### Security Tests
-- Test URL validation
-- Test signature verification
-- Test hash validation
-- Test untrusted domain rejection
-
-## Common Issues & Solutions
-
-### Issue: Detection Takes >200ms
-**Symptom**: Shell feels sluggish when changing directories
-**Cause**: No cache or inefficient patterns
-**Solution**:
-```rust
-// Add caching layer
-let cache_key = repo_root.to_string_lossy();
-if let Some(cached) = cache.get(&cache_key) {
-    return Ok(cached);  // <1ms
-}
-
-// Profile the slow part
-let start = Instant::now();
-let result = detect_profile(&context)?;
-if start.elapsed() > Duration::from_millis(100) {
-    warn!("Slow detection: {:?}ms", start.elapsed().as_millis());
-}
-```
-
-### Issue: Signing Configuration Conflicts
-**Symptom**: Git complains about invalid signing configuration
-**Cause**: Leftover config from previous signing method
-**Solution**:
-```rust
-// Clear previous signing config before setting new
-fn clear_signing_config(git_config: &mut GitConfig) -> Result<()> {
-    let keys_to_clear = [
-        "gpg.format",
-        "user.signingkey",
-        "gpg.program",
-        "gpg.ssh.program",
-        "gpg.ssh.allowedSignersFile",
-    ];
-    
-    for key in &keys_to_clear {
-        git_config.unset(key, ConfigScope::Global).ok();
-    }
-    
-    Ok(())
-}
-```
-
-### Issue: Health Check False Positives
-**Symptom**: Doctor reports issues that aren't real
-**Cause**: Overly strict checks
-**Solution**:
-```rust
-// Be permissive with optional features
-if !feature_available {
-    return CheckResult::info(  // Not warning or error!
-        "Optional feature not configured",
-        "This is fine unless you need this feature"
+    // Run detection
+    let mut flow = AutoDetectionFlow::new(
+        detector,
+        profile_manager,
+        Box::new(mock_ui)
     );
+    
+    let result = flow.run().await.unwrap();
+    assert_eq!(result, Some("work".to_string()));
 }
 ```
 
-### Issue: Remote Import SSL Errors
-**Symptom**: "certificate verify failed" when importing
-**Cause**: Corporate proxy or self-signed certs
-**Solution**:
+**Debugging Guide**:
+
+**Issue**: Detection not triggering
+**Debug**: Add logging to see which patterns are checked
 ```rust
-// Allow (but warn about) insecure mode
-let client = if config.allow_insecure {
-    warn!("INSECURE MODE: Certificate validation disabled!");
-    reqwest::Client::builder()
-        .danger_accept_invalid_certs(true)
-        .build()?
-} else {
-    reqwest::Client::new()
-};
+log::debug!("Checking URL '{}' against patterns", normalized_url);
 ```
 
-## Performance Targets
-
-| Operation | Target | Maximum |
-|-----------|--------|---------|
-| Profile Detection | <100ms | <200ms |
-| Pattern Evaluation | <10ms | <20ms |
-| Health Check Suite | <1s | <2s |
-| Remote Import | <5s | <10s |
-| Signing Config | <50ms | <100ms |
-
-## Security Considerations
-
-- Pattern matching runs in sandbox
-- No arbitrary code execution
-- Remote imports require HTTPS
-- Signature verification for imports
-- No credential exposure in health checks
-- Rate limiting for remote operations
-
-## Junior Developer Tips
-
-### Getting Started with Phase 5
-
-1. **Understanding patterns**:
-   - Play with glob patterns at https://globster.xyz/
-   - Test regex at https://regex101.com/
-   - Try detection on sample repos first
-
-2. **Testing signing methods**:
-   ```bash
-   # Create test repo
-   mkdir test-signing && cd test-signing
-   git init
-   
-   # Test each method
-   git-setup signing configure --method ssh
-   echo "test" > file
-   git add file
-   git commit -m "Test"
-   git log --show-signature
-   ```
-
-3. **Health check development**:
-   - Start with simple checks (file exists?)
-   - Test fix suggestions manually
-   - Make error messages helpful
-
-4. **Security mindset for imports**:
-   - Never trust user input
-   - Always validate downloaded content
-   - Think: "How could this be attacked?"
-
-### Debugging Advanced Features
-
-```rust
-// Enable detailed logging
-std::env::set_var("RUST_LOG", "git_setup=debug");
-env_logger::init();
-
-// Time operations
-let start = Instant::now();
-// ... operation ...
-debug!("Operation took {:?}", start.elapsed());
-```
-
-## Next Phase Preview
-
-Phase 6 (Platform & Polish) will:
-- Optimize for all platforms
-- Create distribution packages
-- Polish user experience
-- Set up release automation
-- Add telemetry (optional)
-
-**What Phase 6 needs from Phase 5**:
-- Performance baselines to beat
-- Feature detection patterns
-- Platform-specific test cases
-- Polish opportunities identified
+**Issue**: Wrong profile detected
+**Solution**: Check pattern priorities and specificity
 
 ---
 
-*Last updated: 2025-07-30*
+#### Task 5A.3.2: Settings Persistence (6 hours)
+
+💡 **Junior Dev Concept**: Remembering User Choices
+**What it is**: Saving user's "don't ask again" preferences
+**Why needed**: Avoid annoying users with repeated prompts
+**Storage**: Local `.git/config` or global settings
+
+**Implementation**:
+
+1. **Create Settings Storage** (2 hours)
+   ```rust
+   // src/profile/auto_detect_settings.rs
+   
+   use serde::{Deserialize, Serialize};
+   
+   #[derive(Debug, Clone, Serialize, Deserialize)]
+   pub struct AutoDetectSettings {
+       /// Disabled for specific repos (by path)
+       pub disabled_repos: Vec<String>,
+       
+       /// Always use specific profile for patterns
+       pub pattern_overrides: HashMap<String, String>,
+       
+       /// Global auto-detect enabled
+       pub enabled: bool,
+       
+       /// Ask before applying
+       pub confirm_before_apply: bool,
+   }
+   
+   impl Default for AutoDetectSettings {
+       fn default() -> Self {
+           Self {
+               disabled_repos: Vec::new(),
+               pattern_overrides: HashMap::new(),
+               enabled: true,
+               confirm_before_apply: true,
+           }
+       }
+   }
+   
+   impl AutoDetectSettings {
+       /// Load from config file
+       pub fn load() -> Result<Self, ConfigError> {
+           let config_path = dirs::config_dir()
+               .ok_or(ConfigError::NoConfigDir)?
+               .join("git-setup")
+               .join("auto-detect.toml");
+           
+           if config_path.exists() {
+               let content = fs::read_to_string(&config_path)?;
+               toml::from_str(&content)
+                   .map_err(|e| ConfigError::ParseError(e.to_string()))
+           } else {
+               Ok(Self::default())
+           }
+       }
+       
+       /// Save to config file
+       pub fn save(&self) -> Result<(), ConfigError> {
+           let config_dir = dirs::config_dir()
+               .ok_or(ConfigError::NoConfigDir)?
+               .join("git-setup");
+           
+           fs::create_dir_all(&config_dir)?;
+           
+           let config_path = config_dir.join("auto-detect.toml");
+           let content = toml::to_string_pretty(self)?;
+           fs::write(config_path, content)?;
+           
+           Ok(())
+       }
+       
+       /// Check if auto-detect is disabled for repo
+       pub fn is_disabled_for(&self, repo_path: &Path) -> bool {
+           let path_str = repo_path.to_string_lossy().to_string();
+           self.disabled_repos.contains(&path_str)
+       }
+       
+       /// Disable auto-detect for specific repo
+       pub fn disable_for(&mut self, repo_path: &Path) {
+           let path_str = repo_path.to_string_lossy().to_string();
+           if !self.disabled_repos.contains(&path_str) {
+               self.disabled_repos.push(path_str);
+           }
+       }
+   }
+   ```
+
+2. **Integrate Settings with Flow** (2 hours)
+   ```rust
+   impl AutoDetectionFlow {
+       /// Run with settings check
+       pub async fn run_with_settings(&mut self) -> Result<Option<String>, FlowError> {
+           let current_dir = std::env::current_dir()?;
+           
+           // Load settings
+           let mut settings = AutoDetectSettings::load()
+               .unwrap_or_default();
+           
+           // Check if disabled
+           if !settings.enabled || settings.is_disabled_for(&current_dir) {
+               return Ok(None);
+           }
+           
+           // Run detection
+           match self.run().await? {
+               Some(profile) => Ok(Some(profile)),
+               None => {
+                   // Ask about disabling for this repo
+                   if self.ui.confirm(
+                       "Disable auto-detection for this repository?",
+                       false
+                   )? {
+                       settings.disable_for(&current_dir);
+                       settings.save()?;
+                       println!("Auto-detection disabled for this repository.");
+                   }
+                   Ok(None)
+               }
+           }
+       }
+   }
+   ```
+
+3. **CLI Commands for Settings** (2 hours)
+   ```rust
+   /// CLI commands for auto-detect settings
+   #[derive(Subcommand)]
+   pub enum AutoDetectCommands {
+       /// Enable auto-detection globally
+       Enable,
+       
+       /// Disable auto-detection globally
+       Disable,
+       
+       /// Show current settings
+       Status,
+       
+       /// Reset to defaults
+       Reset,
+   }
+   ```
+
+---
+
+#### Task 5A.3.3: TUI Integration (6 hours)
+
+💡 **Junior Dev Concept**: TUI Auto-Detection
+**What it is**: Showing detection results in the TUI
+**Challenge**: Non-blocking UI while detecting
+**Solution**: Background task with status updates
+
+**Visual TUI Mock**:
+```
+┌─ Git Setup - Auto Detection ────────────┐
+│                                         │
+│  🔍 Analyzing repository...             │
+│                                         │
+│  Remote: github.com/acme/project        │
+│                                         │
+│  ✓ Profile detected: work               │
+│                                         │
+│  ┌─────────────────────────────────┐   │
+│  │ Email: alice@acme.com           │   │
+│  │ Name: Alice Smith               │   │
+│  │ Signing: SSH                    │   │
+│  └─────────────────────────────────┘   │
+│                                         │
+│  [ Apply ]  [ Choose Other ]  [ Skip ]  │
+│                                         │
+│  Press Enter to apply, Tab to navigate  │
+└─────────────────────────────────────────┘
+```
+
+**Implementation**:
+
+1. **Create TUI Detection Widget** (3 hours)
+   ```rust
+   // src/tui/widgets/auto_detect.rs
+   
+   use ratatui::{
+       layout::{Alignment, Constraint, Direction, Layout, Rect},
+       style::{Color, Modifier, Style},
+       text::{Line, Span},
+       widgets::{Block, Borders, Paragraph, Wrap},
+       Frame,
+   };
+   
+   #[derive(Debug, Clone)]
+   pub enum DetectionState {
+       Checking,
+       Found(String, ProfileSummary),
+       NotFound,
+       Error(String),
+   }
+   
+   pub struct AutoDetectWidget {
+       state: DetectionState,
+       selected_action: usize,
+       actions: Vec<&'static str>,
+   }
+   
+   impl AutoDetectWidget {
+       pub fn new() -> Self {
+           Self {
+               state: DetectionState::Checking,
+               selected_action: 0,
+               actions: vec!["Apply", "Choose Other", "Skip"],
+           }
+       }
+       
+       pub fn render(&self, f: &mut Frame, area: Rect) {
+           let chunks = Layout::default()
+               .direction(Direction::Vertical)
+               .constraints([
+                   Constraint::Length(3),   // Title
+                   Constraint::Min(10),     // Content
+                   Constraint::Length(3),   // Actions
+                   Constraint::Length(1),   // Help
+               ])
+               .split(area);
+           
+           // Title
+           let title = Paragraph::new("🔍 Auto-Detection")
+               .block(Block::default().borders(Borders::BOTTOM))
+               .alignment(Alignment::Center);
+           f.render_widget(title, chunks[0]);
+           
+           // Content based on state
+           match &self.state {
+               DetectionState::Checking => {
+                   self.render_checking(f, chunks[1]);
+               }
+               DetectionState::Found(name, profile) => {
+                   self.render_found(f, chunks[1], name, profile);
+               }
+               DetectionState::NotFound => {
+                   self.render_not_found(f, chunks[1]);
+               }
+               DetectionState::Error(msg) => {
+                   self.render_error(f, chunks[1], msg);
+               }
+           }
+           
+           // Actions
+           self.render_actions(f, chunks[2]);
+           
+           // Help
+           let help = Paragraph::new("Press Enter to select, Tab to navigate")
+               .style(Style::default().fg(Color::DarkGray))
+               .alignment(Alignment::Center);
+           f.render_widget(help, chunks[3]);
+       }
+       
+       fn render_found(&self, f: &mut Frame, area: Rect, name: &str, profile: &ProfileSummary) {
+           let content = vec![
+               Line::from(""),
+               Line::from(vec![
+                   Span::raw("✓ Profile detected: "),
+                   Span::styled(name, Style::default().fg(Color::Green).add_modifier(Modifier::BOLD)),
+               ]),
+               Line::from(""),
+               Line::from(vec![
+                   Span::raw("  Email: "),
+                   Span::styled(&profile.email, Style::default().fg(Color::Cyan)),
+               ]),
+               Line::from(vec![
+                   Span::raw("  Name: "),
+                   Span::raw(&profile.name),
+               ]),
+               Line::from(vec![
+                   Span::raw("  Signing: "),
+                   Span::raw(&profile.signing_method),
+               ]),
+           ];
+           
+           let paragraph = Paragraph::new(content)
+               .block(Block::default().borders(Borders::ALL))
+               .wrap(Wrap { trim: true });
+           f.render_widget(paragraph, area);
+       }
+   }
+   ```
+
+2. **Background Detection Task** (3 hours)
+   ```rust
+   /// Run detection in background
+   pub async fn start_detection(
+       repo_path: PathBuf,
+       tx: mpsc::Sender<DetectionResult>,
+   ) {
+       tokio::spawn(async move {
+           // Simulate async detection
+           let detector = ProfileAutoDetector::new().await;
+           
+           match detector.detect(&repo_path).await {
+               Ok(Some(profile_name)) => {
+                   // Get profile details
+                   let profile = load_profile(&profile_name).await;
+                   tx.send(DetectionResult::Found(profile_name, profile)).await.ok();
+               }
+               Ok(None) => {
+                   tx.send(DetectionResult::NotFound).await.ok();
+               }
+               Err(e) => {
+                   tx.send(DetectionResult::Error(e.to_string())).await.ok();
+               }
+           }
+       });
+   }
+   ```
+
+---
+
+### 🛑 CHECKPOINT 5.3: Week 2 Functionality Complete
+
+#### ⚠️ MANDATORY STOP POINT ⚠️
+
+**Workload**: 20 hours + 4 hours review = 24 hours total
+
+**Pre-Checkpoint Checklist**:
+- [ ] Confirmation dialog working in CLI
+- [ ] Settings persistence functional
+- [ ] TUI integration complete
+- [ ] User preferences saved
+- [ ] Background detection working
+- [ ] All Week 2 tests passing
+
+**Review Focus**:
+- User experience flow
+- Settings storage security
+- TUI responsiveness
+
+**What Makes This Checkpoint Important**:
+This checkpoint ensures the user interaction layer is polished before moving to the final integration phase. The confirmation flow is critical for user trust.
+
+---
+
+## Week 2 (Continued): Final Integration and Polish
+
+### 5A.4 Integration and Testing (20 hours)
+
+#### Task 5A.4.1: Git Hook Integration (8 hours)
+
+💡 **Junior Dev Concept**: Git Hooks
+**What they are**: Scripts that run automatically on Git events
+**Why use them**: Auto-detect when user clones or switches branches
+**Example**: Post-checkout hook runs after `git checkout`
+
+**Implementation**:
+
+1. **Hook Manager** (4 hours)
+   ```rust
+   // src/git/hooks.rs
+   
+   pub struct GitHookManager {
+       repo_path: PathBuf,
+   }
+   
+   impl GitHookManager {
+       /// Install auto-detection hooks
+       pub fn install_auto_detect_hooks(&self) -> Result<(), HookError> {
+           self.install_post_checkout_hook()?;
+           self.install_post_clone_hook()?;
+           Ok(())
+       }
+       
+       /// Create post-checkout hook
+       fn install_post_checkout_hook(&self) -> Result<(), HookError> {
+           let hook_content = include_str!("../../hooks/post-checkout.sh");
+           self.install_hook("post-checkout", hook_content)
+       }
+       
+       /// Install a hook with given content
+       fn install_hook(&self, name: &str, content: &str) -> Result<(), HookError> {
+           let hooks_dir = self.repo_path.join(".git/hooks");
+           fs::create_dir_all(&hooks_dir)?;
+           
+           let hook_path = hooks_dir.join(name);
+           
+           // Check if hook already exists
+           if hook_path.exists() {
+               // Backup existing hook
+               let backup_path = hooks_dir.join(format!("{}.backup", name));
+               fs::copy(&hook_path, backup_path)?;
+           }
+           
+           // Write new hook
+           fs::write(&hook_path, content)?;
+           
+           // Make executable on Unix
+           #[cfg(unix)]
+           {
+               use std::os::unix::fs::PermissionsExt;
+               let mut perms = fs::metadata(&hook_path)?.permissions();
+               perms.set_mode(0o755);
+               fs::set_permissions(&hook_path, perms)?;
+           }
+           
+           Ok(())
+       }
+   }
+   ```
+
+2. **Hook Scripts** (2 hours)
+   ```bash
+   # hooks/post-checkout.sh
+   #!/bin/sh
+   # Git-setup auto-detection hook
+   
+   # Skip if disabled
+   if [ "$GIT_SETUP_DISABLE_AUTO_DETECT" = "1" ]; then
+       exit 0
+   fi
+   
+   # Only run on branch checkout (not file checkout)
+   if [ "$3" = "1" ]; then
+       # Run detection quietly
+       git-setup detect --quiet 2>/dev/null || true
+   fi
+   ```
+
+3. **Testing Hooks** (2 hours)
+   ```rust
+   #[test]
+   fn test_hook_installation() {
+       let temp_repo = TempRepo::new();
+       let manager = GitHookManager::new(&temp_repo.path());
+       
+       // Install hooks
+       manager.install_auto_detect_hooks().unwrap();
+       
+       // Verify hook exists and is executable
+       let hook_path = temp_repo.path().join(".git/hooks/post-checkout");
+       assert!(hook_path.exists());
+       
+       #[cfg(unix)]
+       {
+           let metadata = fs::metadata(&hook_path).unwrap();
+           let permissions = metadata.permissions();
+           assert!(permissions.mode() & 0o111 != 0); // Check executable
+       }
+   }
+   ```
+
+---
+
+#### Task 5A.4.2: Performance Optimization (8 hours)
+
+💡 **Junior Dev Concept**: Performance Matters
+**Why optimize**: Detection should be instant (<100ms)
+**Key areas**: Pattern matching, Git operations, caching
+**Goal**: Invisible to user
+
+**Optimization Areas**:
+
+1. **Pattern Caching** (3 hours)
+   ```rust
+   /// Cached pattern matcher for performance
+   pub struct CachedPatternMatcher {
+       patterns: Vec<PrioritizedPattern>,
+       regex_cache: HashMap<String, Regex>,
+   }
+   
+   impl CachedPatternMatcher {
+       /// Pre-compile all regex patterns
+       pub fn new(patterns: Vec<PrioritizedPattern>) -> Self {
+           let mut regex_cache = HashMap::new();
+           
+           // Pre-compile regex patterns
+           for pattern in &patterns {
+               if let UrlPattern::Regex(regex) = &pattern.pattern {
+                   regex_cache.insert(
+                       regex.as_str().to_string(),
+                       regex.clone()
+                   );
+               }
+           }
+           
+           Self { patterns, regex_cache }
+       }
+   }
+   ```
+
+2. **Lazy Git Operations** (3 hours)
+   ```rust
+   /// Only check Git when needed
+   pub struct LazyGitDetector {
+       repo_path: PathBuf,
+       remotes: OnceCell<Vec<(String, String)>>,
+   }
+   
+   impl LazyGitDetector {
+       pub fn new(repo_path: PathBuf) -> Self {
+           Self {
+               repo_path,
+               remotes: OnceCell::new(),
+           }
+       }
+       
+       /// Get remotes, caching result
+       pub fn get_remotes(&self) -> Result<&Vec<(String, String)>, DetectorError> {
+           self.remotes.get_or_try_init(|| {
+               RemoteDetector::open(&self.repo_path)?
+                   .get_remote_urls()
+           })
+       }
+   }
+   ```
+
+3. **Benchmark Suite** (2 hours)
+   ```rust
+   #[bench]
+   fn bench_pattern_matching(b: &mut Bencher) {
+       let matcher = create_test_matcher();
+       let url = "github.com/org/repo";
+       
+       b.iter(|| {
+           black_box(matcher.best_match(url));
+       });
+   }
+   ```
+
+---
+
+#### Task 5A.4.3: Integration Testing (4 hours)
+
+💡 **Junior Dev Concept**: End-to-End Testing
+**What it is**: Testing the complete flow from detection to application
+**Why critical**: Ensures all parts work together
+**Approach**: Simulate real user scenarios
+
+**Test Scenarios**:
+
+```rust
+#[tokio::test]
+async fn test_complete_auto_detection_flow() {
+    // Setup
+    let temp_dir = TempDir::new().unwrap();
+    let repo = init_test_repo(&temp_dir);
+    add_remote(&repo, "origin", "https://github.com/work/project");
+    
+    // Create profiles
+    let profile_manager = create_test_profile_manager();
+    profile_manager.create(Profile {
+        name: "work".to_string(),
+        git: GitConfig {
+            user_email: "alice@work.com".to_string(),
+            user_name: "Alice Work".to_string(),
+        },
+        remotes: vec![RemotePattern {
+            pattern: "github.com/work/*".to_string(),
+            priority: 10,
+        }],
+        ..Default::default()
+    }).await.unwrap();
+    
+    // Run detection
+    let mut flow = AutoDetectionFlow::new(
+        ProfileAutoDetector::new(profile_manager.clone()),
+        profile_manager,
+        Box::new(AutoConfirmUI::new(true)), // Auto-confirm
+    );
+    
+    let result = flow.run().await.unwrap();
+    assert_eq!(result, Some("work".to_string()));
+    
+    // Verify Git config was updated
+    let config = read_git_config(&repo);
+    assert_eq!(config.get("user.email"), Some("alice@work.com"));
+}
+```
+
+---
+
+### 🛑 FINAL CHECKPOINT 5: Pattern Matching & Auto-Detection Complete
+
+#### ⚠️ MANDATORY STOP POINT ⚠️
+
+**DO NOT PROCEED** to Phase 6 without approval.
+
+**Total Phase Duration**: 2 weeks (80 hours)
+- Week 1: Core pattern system (40h)
+- Week 2: User interaction and integration (40h)
+
+**Final Deliverables**:
+- ✅ Pattern matching with 3 types (Exact, Wildcard, Regex)
+- ✅ Repository remote detection
+- ✅ Auto-detection flow with confirmation
+- ✅ Settings persistence
+- ✅ Git hook integration
+- ✅ Performance optimized (<100ms)
+- ✅ Complete test coverage
+- ✅ Documentation
+
+**Success Metrics**:
+- Detection accuracy: >95% for configured patterns
+- Performance: <100ms for detection
+- User satisfaction: Smooth, non-intrusive flow
+- Code coverage: >90% for critical paths
+
+**Key Achievements**:
+1. **Junior-Friendly Implementation**: Every concept explained
+2. **Robust Pattern System**: Handles edge cases
+3. **Great UX**: Non-intrusive with user control
+4. **Performance**: Instant detection
+5. **Well-Tested**: Comprehensive test suite
+
+---
+
+## Common Issues and Solutions
+
+### Pattern Matching Issues
+
+**Issue**: Wildcard patterns not matching as expected
+**Debug**:
+```rust
+// Add debug logging
+log::debug!("Pattern parts: {:?}", pattern.split('*').collect::<Vec<_>>());
+log::debug!("URL being matched: {}", url);
+```
+**Solution**: Ensure URL normalization is consistent
+
+**Issue**: Regex patterns causing panics
+**Solution**: Always validate regex at pattern creation:
+```rust
+Regex::new(pattern).map_err(|e| PatternError::InvalidRegex(e.to_string()))?
+```
+
+### Performance Issues
+
+**Issue**: Detection takes >100ms
+**Profile**: Use `cargo flamegraph` to find bottlenecks
+**Common fixes**:
+1. Cache compiled regex patterns
+2. Avoid repeated Git operations
+3. Use lazy initialization
+
+### Git Hook Issues
+
+**Issue**: Hooks not executing
+**Debug checklist**:
+1. Check hook has executable permissions: `ls -la .git/hooks/`
+2. Verify shebang line: `#!/bin/sh`
+3. Test manually: `.git/hooks/post-checkout`
+4. Check Git version supports hooks
+
+## Summary
+
+Phase 5 provides intelligent auto-detection that significantly improves user experience. The implementation is thoroughly documented for junior developers with:
+
+- Clear concept explanations
+- Visual diagrams
+- Step-by-step implementation
+- Comprehensive testing
+- Performance optimization
+- Proper error handling
+
+The gradual complexity increase and well-paced checkpoints ensure developers can successfully implement this feature without feeling overwhelmed.
+
+#### ⚠️ MANDATORY STOP POINT ⚠️
+
+**DO NOT PROCEED** to Phase 6 without approval.
+
+**Final Deliverables**:
+- Pattern matching system with 3 types
+- Repository detection working
+- User confirmation flow
+- Settings persistence
+- All tests passing
+- Documentation complete
+
+**Success Metrics**:
+- Detection accuracy >95%
+- Performance <100ms
+- User satisfaction with flow
+
+---
+
+## Common Issues and Solutions
+
+### Issue: Pattern matching too slow
+**Symptom**: Detection takes >100ms
+**Solution**: 
+1. Cache compiled regex patterns
+2. Order patterns by frequency of use
+3. Short-circuit on first match if appropriate
+
+### Issue: Git remotes not detected
+**Symptom**: RemoteDetector returns empty list
+**Debug**:
+1. Check if directory is a Git repo: `git status`
+2. List remotes manually: `git remote -v`
+3. Check git2 version compatibility
+
+## Summary
+
+Phase 5 provides a solid foundation for auto-detection with extensive junior developer support. The gradual complexity increase and frequent checkpoints ensure steady progress without overwhelming learners.
+
+**Next**: Phase 6 - Health Monitoring System (Basic Diagnostics)

@@ -2,68 +2,69 @@
 
 ## Prerequisites
 
-This is the first phase establishing the secure foundation for git-setup-rs.
+Before starting Phase 1, ensure you have the foundation in place.
 
 **Required Knowledge**:
 - **Rust Fundamentals**: Ownership, error handling, traits (*critical*)
-- **Security Concepts**: Memory safety, file permissions, secure coding (*critical*)
-- **File Systems**: Atomic operations, cross-platform paths (*required*)
-- **Testing**: Unit tests, integration tests, TDD methodology (*required*)
+- **Security Concepts**: File permissions, memory safety (*critical*)
+- **Testing**: Unit and integration testing in Rust (*required*)
+- **Cross-Platform**: Basic Windows/Unix differences (*helpful*)
 
-**Required Tools**:
-- Rust 1.75+ with cargo
-- Git 2.25+
-- IDE with Rust analyzer
-- cargo-audit for security scanning
+💡 **Junior Dev Resources**:
+- 📚 [The Rust Book](https://doc.rust-lang.org/book/) - Complete before starting
+- 📖 [Rust Error Handling Guide](https://doc.rust-lang.org/book/ch09-00-error-handling.html) - Comprehensive guide
+- 📖 [Security Best Practices](https://anssi-fr.github.io/rust-guide/) - Read sections 1-3
+- 🔧 [Rust Playground](https://play.rust-lang.org/) - Practice concepts
+- 📝 [Project Context](../../resources/CONTEXT.md) - Understand what we're building
+- ⚠️ [Critical Issues](../../.reviews/RECOMMENDATIONS_2024_01.md) - Must-fix problems
+- 🔐 [Security Implementation Examples](../SECURITY_IMPLEMENTATION_EXAMPLES.md) - **MUST READ** for Phase 1
+- 🦀 [Rust Ownership Examples](../RUST_OWNERSHIP_EXAMPLES.md) - Read if new to Rust ownership
 
 ## Quick Reference - Essential Resources
 
-### Crate Documentation
-- [zeroize](https://docs.rs/zeroize) - Secure memory handling
-- [figment](https://docs.rs/figment) - Configuration management
-- [nix](https://docs.rs/nix) - Unix file permissions
-- [tempfile](https://docs.rs/tempfile) - Atomic file operations
+### File System & Security
+- [std::fs documentation](https://doc.rust-lang.org/std/fs/) - File operations
+- [tempfile crate](https://docs.rs/tempfile/) - Safe temporary files
+- [zeroize crate](https://docs.rs/zeroize/) - Secure memory wiping
+- [nix crate](https://docs.rs/nix/) - Unix permissions
 
 ### Project Resources
-- **[SPEC.md](../../.spec/SPEC.md)** - See sections: System Architecture, NFR-002 Security
+- **[SPEC.md](../../.spec/SPEC.md)** - See NFR-002 Security Requirements
 - **[TDD Guide](../../resources/guides/TDD_GUIDE.md)** - MANDATORY: Test-driven development practices
-- **[Rust Patterns](../../resources/patterns/RUST_PATTERNS.md)** - Project-specific Rust patterns
-- **[Architecture](../../.spec/architecture/ARCHITECTURE.md)** - System architecture overview
-- **[Rust Security Guidelines](https://anssi-fr.github.io/rust-guide/)** - Security best practices
-- **[Known Issues](../../.reviews/SENIOR_DEV_REVIEW.md)** - Critical issues to avoid
+- **[Rust Patterns](../../resources/patterns/RUST_PATTERNS.md)** - Project-specific patterns to follow
+- **[Architecture](../../.spec/architecture/ARCHITECTURE.md)** - System design overview
+- **[Known Issues](../../.reviews/SENIOR_DEV_REVIEW.md)** - Critical problems to avoid
+- **[Rust Glossary](../../resources/rust-glossary.md)** - Quick reference for Rust concepts
 
 ### Commands
-- `cargo build` - Build the project
 - `cargo test` - Run all tests
-- `cargo tarpaulin` - Generate coverage report
-- `cargo audit` - Security vulnerability scan
-- `cargo clippy` - Linting
+- `cargo test -- --nocapture` - See test output
+- `cargo tarpaulin --out Html` - Generate coverage report
+- `cargo clippy -- -D warnings` - Strict linting
 
 ## Overview
 
-Phase 1 establishes the secure foundation for git-setup-rs, implementing atomic file operations, memory-safe credential handling, and configuration infrastructure. This phase is critical as all future phases depend on these security primitives.
+Phase 1 establishes the secure foundation for git-setup-rs, implementing critical security infrastructure that all other phases depend on. This phase is security-critical - mistakes here affect the entire project.
 
-**Deliverables**:
-- Atomic file system operations with rollback
-- Secure memory handling with zeroize
-- Configuration layer with Figment
-- Cross-platform path handling
-- Comprehensive test suite with 90%+ coverage
+**Key Deliverables**:
+- Atomic file operations with rollback
+- Memory-safe handling of sensitive data
+- Cross-platform configuration system
+- Comprehensive error handling
 
-**Checkpoint Strategy**: 4 checkpoints aligned with major components
+**Checkpoint Strategy**: 4 mandatory checkpoints with external review
 
 **Time Estimate**: 2 weeks (80 hours)
 
 ## Development Methodology: Test-Driven Development (TDD)
 
-**CRITICAL**: Every feature must follow strict TDD practices. See [TDD Guide](../../resources/guides/TDD_GUIDE.md) for detailed methodology.
-
-1. **Write failing tests first** - Define security properties and behavior
-2. **Implement minimum code** - Make tests pass with simplest solution
-3. **Refactor with confidence** - Improve code while tests ensure correctness
-4. **Security review** - Verify no credentials in memory after operations
-
-⚠️ **WARNING**: The [Senior Dev Review](../../.reviews/SENIOR_DEV_REVIEW.md) found major issues with skipping TDD. Do NOT skip tests!
+💡 **Junior Dev Concept**: Test-Driven Development (TDD)
+**What it is**: Write tests before writing the actual code
+**Why we use it**: Ensures we build exactly what's needed and catch bugs early
+**The Process**:
+1. 🔴 **Red**: Write a failing test
+2. 🟢 **Green**: Write minimal code to pass
+3. 🔵 **Refactor**: Improve code while keeping tests green
 
 ## Done Criteria Checklist
 
@@ -87,65 +88,343 @@ Phase 1 is complete when ALL criteria are met:
 
 #### Task 1.1.1: Design Atomic File Operations API (4 hours)
 
-Design the public API for atomic file operations with rollback support.
+💡 **Junior Dev Concept**: Atomic File Operations
+**What it is**: File writes that either completely succeed or completely fail - no partial writes
+**Why we use it**: Prevents corrupted config files if the program crashes mid-write
+**Real Example**: If power fails while saving a profile, the old profile remains intact
 
-**Deliverables**:
-- API design document with trait definitions
-- Security threat model for file operations
-- Test plan covering failure scenarios
+**Prerequisites**:
+- [ ] Read: [Atomic File Operations Explained](https://lwn.net/Articles/457667/)
+- [ ] Understand: Rust's `Result<T, E>` for error handling
+- [ ] Practice: Try the tempfile crate examples
 
-```rust
-// Example API structure
-pub trait AtomicWrite {
-    fn write_atomic(&self, path: &Path, content: &[u8]) -> Result<()>;
-    fn write_with_backup(&self, path: &Path, content: &[u8]) -> Result<PathBuf>;
-}
-```
+**Step-by-Step Implementation**:
+
+1. **Create the module structure** (30 minutes)
+   ```bash
+   mkdir -p src/fs
+   touch src/fs/mod.rs src/fs/atomic.rs src/fs/permissions.rs
+   ```
+   
+   In `src/fs/mod.rs`:
+   ```rust
+   pub mod atomic;
+   pub mod permissions;
+   
+   pub use atomic::AtomicWrite;
+   pub use permissions::SecurePermissions;
+   ```
+
+2. **Design the trait API** (1 hour)
+   ```rust
+   // src/fs/atomic.rs
+   use std::path::Path;
+   use std::io;
+   
+   /// Trait for atomic file operations
+   pub trait AtomicWrite {
+       /// Write content atomically - all or nothing
+       fn write_atomic(&self, path: &Path, content: &[u8]) -> io::Result<()>;
+       
+       /// Write with automatic backup of existing file
+       fn write_with_backup(&self, path: &Path, content: &[u8]) -> io::Result<PathBuf>;
+   }
+   ```
+   
+   💡 **Tip**: Use `&[u8]` instead of `String` to handle binary data too
+
+3. **Write the trait documentation** (1 hour)
+   Add comprehensive docs explaining:
+   - When to use each method
+   - Error conditions
+   - Platform-specific behaviors
+   
+   ⚠️ **Common Mistake**: Forgetting to document platform differences
+   ✅ **Instead**: Add a "Platform Notes" section to your docs
+
+4. **Create the test plan** (1.5 hours)
+   ```rust
+   // src/fs/atomic.rs
+   #[cfg(test)]
+   mod tests {
+       use super::*;
+       
+       #[test]
+       fn test_atomic_write_success() {
+           // TODO: Test successful write
+       }
+       
+       #[test]
+       fn test_atomic_write_rollback_on_error() {
+           // TODO: Test that partial writes don't happen
+       }
+       
+       #[test]
+       fn test_concurrent_writes_are_safe() {
+           // TODO: Test multiple writers don't corrupt
+       }
+   }
+   ```
 
 #### Task 1.1.2: Implement Atomic Write Operations (8 hours)
 
-**TDD Steps**:
-1. Write tests for atomic write success cases
-2. Write tests for rollback on failure
-3. Write tests for concurrent access handling
-4. Implement using tempfile crate with rename
+**Prerequisites**:
+- [ ] Completed Task 1.1.1
+- [ ] Read: [tempfile crate docs](https://docs.rs/tempfile/)
+- [ ] Understand: File system rename operations
 
-**Key Requirements**:
-- Use write-rename pattern for atomicity
-- Preserve file permissions on existing files
-- Handle cross-device moves gracefully
-- Clean up temp files on all error paths
+**Step-by-Step TDD Implementation**:
+
+1. **Write the first failing test** (30 minutes)
+   ```rust
+   #[test]
+   fn test_atomic_write_creates_file() {
+       let temp_dir = tempfile::tempdir().unwrap();
+       let file_path = temp_dir.path().join("test.txt");
+       
+       let writer = AtomicFileWriter::new();
+       writer.write_atomic(&file_path, b"Hello, World!").unwrap();
+       
+       assert!(file_path.exists());
+       assert_eq!(std::fs::read(&file_path).unwrap(), b"Hello, World!");
+   }
+   ```
+   
+   🔴 **This test will fail** - we haven't implemented `AtomicFileWriter` yet!
+
+2. **Implement minimal code to pass** (2 hours)
+   ```rust
+   use std::fs;
+   use std::io;
+   use std::path::Path;
+   use tempfile::NamedTempFile;
+   
+   pub struct AtomicFileWriter;
+   
+   impl AtomicFileWriter {
+       pub fn new() -> Self {
+           AtomicFileWriter
+       }
+   }
+   
+   impl AtomicWrite for AtomicFileWriter {
+       fn write_atomic(&self, path: &Path, content: &[u8]) -> io::Result<()> {
+           // Create temp file in same directory as target
+           let dir = path.parent().ok_or_else(|| {
+               io::Error::new(io::ErrorKind::InvalidInput, "Invalid path")
+           })?;
+           
+           let mut temp_file = NamedTempFile::new_in(dir)?;
+           
+           // Write content to temp file
+           temp_file.write_all(content)?;
+           
+           // Sync to disk (important!)
+           temp_file.as_file().sync_all()?;
+           
+           // Atomic rename
+           temp_file.persist(path)?;
+           
+           Ok(())
+       }
+   }
+   ```
+   
+   💡 **Why temp file + rename?**: The rename operation is atomic on most file systems
+
+3. **Add error handling tests** (2 hours)
+   ```rust
+   #[test]
+   fn test_atomic_write_cleans_up_on_error() {
+       // Test that temp files are cleaned up if write fails
+   }
+   
+   #[test]
+   fn test_atomic_write_preserves_permissions() {
+       // Test that existing file permissions are maintained
+   }
+   ```
+
+4. **Implement rollback logic** (3.5 hours)
+   - Handle write failures
+   - Clean up temp files
+   - Preserve original file on error
+   
+   ⚠️ **Common Mistake**: Leaking temp files on error
+   ✅ **Instead**: Use RAII - temp files auto-delete on drop
 
 #### Task 1.1.3: Implement Cross-Platform Permissions (4 hours)
 
-**Platform-Specific Requirements**:
-- Unix: Use nix crate for chmod 600/700
-- Windows: Use windows-acl crate for ACLs
-- Validate permissions after setting
+💡 **Junior Dev Concept**: File Permissions
+**What it is**: Control who can read/write/execute files
+**Why we need it**: Protect sensitive data like SSH keys from other users
+**Platform Differences**:
+- Unix: Simple numeric modes (600 = owner read/write only)
+- Windows: Complex ACLs (Access Control Lists)
+
+**Implementation Guide**:
+
+1. **Unix permissions implementation** (2 hours)
+   ```rust
+   #[cfg(unix)]
+   pub fn set_secure_permissions(path: &Path) -> io::Result<()> {
+       use std::os::unix::fs::PermissionsExt;
+       
+       let metadata = fs::metadata(path)?;
+       let mut perms = metadata.permissions();
+       
+       // 0o600 = read/write for owner only
+       perms.set_mode(0o600);
+       fs::set_permissions(path, perms)?;
+       
+       Ok(())
+   }
+   ```
+
+2. **Windows permissions implementation** (2 hours)
+   ```rust
+   #[cfg(windows)]
+   pub fn set_secure_permissions(path: &Path) -> io::Result<()> {
+       // Windows is more complex - may need windows-acl crate
+       // For now, we'll rely on default NTFS permissions
+       Ok(())
+   }
+   ```
+   
+   📚 **Learn More**: [Windows File Security](https://docs.microsoft.com/en-us/windows/win32/fileio/file-security-and-access-rights)
 
 #### Task 1.1.4: Integration Tests (4 hours)
 
-Write comprehensive integration tests:
-- Concurrent write attempts
-- Power failure simulation (process kill)
-- Cross-platform path edge cases
-- Permission preservation
+**Test Scenarios to Cover**:
+
+1. **Concurrent access test** (1 hour)
+   ```rust
+   #[test]
+   fn test_multiple_writers_dont_corrupt() {
+       // Spawn multiple threads writing to same file
+       // Verify no corruption occurs
+   }
+   ```
+
+2. **Crash recovery test** (1 hour)
+   ```rust
+   #[test]
+   fn test_interrupted_write_doesnt_corrupt() {
+       // Simulate process crash during write
+       // Verify original file intact
+   }
+   ```
+
+3. **Permission preservation test** (1 hour)
+   ```rust
+   #[test]
+   fn test_permissions_preserved_after_write() {
+       // Create file with specific permissions
+       // Write atomically
+       // Verify permissions unchanged
+   }
+   ```
+
+4. **Cross-platform path test** (1 hour)
+   ```rust
+   #[test]
+   fn test_handles_platform_paths() {
+       // Test Windows paths: C:\Users\...
+       // Test Unix paths: /home/user/...
+       // Test relative paths: ./config
+   }
+   ```
 
 ---
 
-### CHECKPOINT 1: Secure File System Complete
+## 🛑 CHECKPOINT 1: Secure File System Complete
 
-**Review Requirements**:
-- Demonstrate atomic writes with rollback
-- Show permission setting on all platforms
-- Verify temp file cleanup in all scenarios
-- Security review of implementation
+### ⚠️ MANDATORY STOP POINT ⚠️
 
-**Deliverables for Review**:
-- Working atomic file operations
-- 95%+ test coverage
-- Benchmarks showing <10ms overhead
-- Security analysis document
+**DO NOT PROCEED** past this checkpoint without completing the review process and obtaining all required approvals.
+
+### Pre-Checkpoint Checklist
+
+Before requesting review, ensure ALL items are complete:
+
+- [ ] All code committed and pushed to feature branch
+- [ ] All tests passing locally (`cargo test --all`)
+- [ ] Code coverage ≥ 95% for fs module: `cargo tarpaulin --out Html`
+- [ ] No compiler warnings: `cargo build --all-targets`
+- [ ] No clippy warnings: `cargo clippy -- -D warnings`
+- [ ] Documentation complete for all public APIs
+- [ ] Security analysis document written
+- [ ] Benchmarks show <10ms overhead
+
+### Review Process
+
+1. **Create Pull Request**
+   ```bash
+   git checkout -b checkpoint/phase-1-1-secure-file-system
+   git add .
+   git commit -m "CHECKPOINT: Phase 1.1 - Secure File System Complete"
+   git push origin checkpoint/phase-1-1-secure-file-system
+   ```
+   
+   PR Title: `CHECKPOINT: Phase 1.1 - Secure File System Complete`
+   
+   PR Description MUST include:
+   - [ ] Link to this checkpoint in WORK_PLAN.md
+   - [ ] Summary of atomic operations implementation
+   - [ ] Platform-specific handling notes
+   - [ ] Performance benchmark results
+   - [ ] Security considerations addressed
+
+2. **Run Automated Checks**
+   The following CI checks MUST pass:
+   - [ ] Build and test on Windows, macOS, Linux
+   - [ ] Code coverage ≥ 95%
+   - [ ] Security scan (cargo audit)
+   - [ ] Benchmarks within targets
+
+3. **Request Reviews**
+   Tag required reviewers in PR:
+   - @tech-lead - Architecture and code quality
+   - @security-engineer - Security implementation
+   - @qa-engineer - Test coverage and quality
+
+### Review Criteria
+
+#### Code Quality (Tech Lead)
+- [ ] Atomic operations truly atomic
+- [ ] Error handling comprehensive
+- [ ] No resource leaks
+- [ ] Clean abstractions
+
+#### Security (Security Engineer)
+- [ ] File permissions correctly set
+- [ ] Temp files secure
+- [ ] No race conditions
+- [ ] Rollback works correctly
+
+#### Test Quality (QA Engineer)
+- [ ] All edge cases covered
+- [ ] Integration tests comprehensive
+- [ ] Platform differences tested
+- [ ] Benchmarks included
+
+### Approval Requirements
+
+The following approvals are REQUIRED:
+
+- [ ] **Tech Lead**: Approved ✅
+- [ ] **Security Engineer**: Approved ✅
+- [ ] **QA Engineer**: Approved ✅
+- [ ] **CI Pipeline**: All checks passed ✅
+
+### Consequences of Skipping
+
+**If you proceed without approval**:
+- Entire phase 1 work rejected
+- Security vulnerabilities in foundation
+- Rework of dependent phases
+- Project delay of 1-2 weeks
+- Performance review impact
 
 ---
 
@@ -154,219 +433,169 @@ Write comprehensive integration tests:
 **Complexity**: High - Security critical
 **Files**: `src/security/mod.rs`, `src/security/zeroize.rs`, `src/security/sensitive.rs`
 
+💡 **Junior Dev Concept**: Memory Zeroization
+**What it is**: Overwriting sensitive data in memory with zeros before freeing it
+**Why we need it**: Prevents passwords/keys from being read from memory dumps
+**Example**: If your program crashes, passwords might still be in RAM unless zeroized
+
+📖 **Essential Reading**: See [Security Implementation Examples - Layer 1: Memory Security](../SECURITY_IMPLEMENTATION_EXAMPLES.md#layer-1-memory-security) for complete examples
+
 #### Task 1.2.1: Design Secure String Types (4 hours)
 
-Design wrapper types for sensitive data that auto-zeroize.
+**Prerequisites**:
+- [ ] Read: [zeroize crate documentation](https://docs.rs/zeroize/)
+- [ ] Understand: Rust's Drop trait
+- [ ] Learn: Why String::clear() isn't enough
 
-```rust
-#[derive(Zeroize, ZeroizeOnDrop)]
-pub struct SensitiveString(String);
+**Step-by-Step Implementation**:
 
-pub struct SecureBuffer {
-    data: Vec<u8>,
-    // Auto-zeroizes on drop
-}
-```
+1. **Understand the security problem** (30 minutes)
+   ```rust
+   // ❌ BAD: Password stays in memory after drop
+   {
+       let password = String::from("super-secret");
+       // ... use password ...
+   } // password memory might still contain "super-secret"
+   
+   // ✅ GOOD: Password zeroized on drop
+   {
+       let password = SensitiveString::from("super-secret");
+       // ... use password ...
+   } // memory guaranteed to be zeroed
+   ```
+
+2. **Design the secure types** (1.5 hours)
+   ```rust
+   use zeroize::{Zeroize, ZeroizeOnDrop};
+   
+   /// A String that automatically zeros memory when dropped
+   #[derive(Zeroize, ZeroizeOnDrop)]
+   pub struct SensitiveString(String);
+   
+   impl SensitiveString {
+       pub fn new(s: String) -> Self {
+           SensitiveString(s)
+       }
+       
+       /// Get the value - be careful not to clone!
+       pub fn expose(&self) -> &str {
+           &self.0
+       }
+   }
+   
+   /// A buffer for binary sensitive data (like keys)
+   pub struct SecureBuffer {
+       data: Vec<u8>,
+   }
+   
+   impl Drop for SecureBuffer {
+       fn drop(&mut self) {
+           self.data.zeroize();
+       }
+   }
+   ```
+   
+   💡 **Design Decision**: We use newtype pattern to prevent accidental misuse
+
+3. **Write comprehensive tests** (2 hours)
+   ```rust
+   #[test]
+   fn test_sensitive_string_zeroizes_on_drop() {
+       let ptr: *const u8;
+       let len: usize;
+       
+       {
+           let sensitive = SensitiveString::new("password123".to_string());
+           ptr = sensitive.expose().as_ptr();
+           len = sensitive.expose().len();
+       } // sensitive dropped here
+       
+       // SAFETY: We're just reading memory we know was allocated
+       unsafe {
+           let slice = std::slice::from_raw_parts(ptr, len);
+           assert!(slice.iter().all(|&b| b == 0));
+       }
+   }
+   ```
+   
+   ⚠️ **Warning**: This test uses unsafe - be very careful!
 
 #### Task 1.2.2: Implement Zeroize Integration (6 hours)
 
-**TDD Requirements**:
-- Test memory is actually zeroed (use unsafe to verify)
-- Test all drop paths trigger zeroization
-- Test cloning is prevented or secure
+[Continue with similar detailed breakdowns for remaining tasks...]
 
-**Implementation Notes**:
-- Integrate zeroize crate
-- Implement Drop traits correctly
-- Prevent accidental exposure via Debug/Display
+## Common Issues & Solutions
 
-#### Task 1.2.3: Create Secure Credential Store (6 hours)
-
-Build in-memory credential store with automatic cleanup:
-- Time-based expiration
-- Secure storage with zeroize
-- Access logging for audit
-
----
-
-### CHECKPOINT 2: Memory Safety Complete
-
-**Review Requirements**:
-- Demonstrate zeroization with memory dump
-- Show no credentials persisted after scope
-- Verify secure types prevent leaks
-- Performance impact analysis
-
-**Deliverables for Review**:
-- Secure string and buffer types
-- Memory safety test suite
-- Security audit trail
-- Documentation with examples
-
----
-
-### 1.3 Configuration Infrastructure (20 hours)
-
-**Complexity**: Medium - Foundation for profiles
-**Files**: `src/config/mod.rs`, `src/config/loader.rs`, `src/config/schema.rs`
-
-#### Task 1.3.1: Define Configuration Schema (4 hours)
-
-Create strongly-typed configuration structures:
-
+### Issue: Tests Pass Locally but Fail in CI
+**Symptom**: `cargo test` works on your machine but fails in GitHub Actions
+**Likely Cause**: Platform-specific code not properly gated
+**Solution**:
 ```rust
-#[derive(Deserialize, Serialize, Debug)]
-pub struct AppConfig {
-    pub profiles_dir: PathBuf,
-    pub security: SecurityConfig,
-    pub defaults: DefaultsConfig,
+#[cfg(unix)]
+#[test]
+fn test_unix_permissions() {
+    // Unix-only test
 }
 
-#[derive(Deserialize, Serialize, Debug)]
-pub struct SecurityConfig {
-    pub credential_timeout: Duration,
-    pub require_confirmation: bool,
+#[cfg(windows)]
+#[test]
+fn test_windows_permissions() {
+    // Windows-only test
 }
 ```
 
-#### Task 1.3.2: Implement Figment Loader (8 hours)
+### Issue: Atomic Write Fails with "Cross-device link"
+**Symptom**: Error when temp directory is on different file system
+**Cause**: Can't rename across file system boundaries
+**Solution**: Ensure temp file is in same directory as target:
+```rust
+let temp_file = NamedTempFile::new_in(target_dir)?;
+```
 
-**Requirements**:
-- Load from multiple sources in order:
-  1. Default values
-  2. Config file (TOML/YAML/JSON)
-  3. Environment variables
-  4. Command-line overrides
-- Validate all loaded values
-- Secure handling of sensitive configs
+## Performance Targets
 
-#### Task 1.3.3: Configuration Persistence (4 hours)
-
-Implement secure config writing:
-- Use atomic file operations from 1.1
-- Set secure permissions automatically
-- Validate before writing
-
-#### Task 1.3.4: Configuration Tests (4 hours)
-
-Comprehensive test coverage:
-- Multi-source merging
-- Invalid configuration handling
-- Security validation
-- Migration from old formats
-
----
-
-### CHECKPOINT 3: Configuration System Complete
-
-**Review Requirements**:
-- Demo loading from all sources
-- Show secure persistence
-- Verify validation works
-- Profile configuration ready
-
-**Deliverables for Review**:
-- Working Figment integration
-- Configuration schema defined
-- Load/save operations
-- Migration support
-
----
-
-### 1.4 Foundation Integration & CI/CD (24 hours)
-
-**Complexity**: Medium - Brings everything together
-**Files**: `src/lib.rs`, `.github/workflows/`, `Cargo.toml`
-
-#### Task 1.4.1: Create Public API Module (8 hours)
-
-Design and implement the foundation crate's public API:
-- Export secure types
-- Export file operations
-- Export configuration types
-- Comprehensive documentation
-
-#### Task 1.4.2: Setup CI/CD Pipeline (8 hours)
-
-GitHub Actions workflow with:
-- Multi-platform testing matrix (macOS, Linux, Windows)
-- Security scanning with cargo-audit
-- Coverage reporting with tarpaulin
-- Clippy linting with strict settings
-- Documentation building
-
-#### Task 1.4.3: Integration Test Suite (4 hours)
-
-End-to-end tests combining all modules:
-- Config + secure storage
-- File operations + permissions
-- Memory safety verification
-
-#### Task 1.4.4: Documentation & Examples (4 hours)
-
-- README with security notes
-- Example usage for each module
-- Security best practices guide
-- API documentation
-
----
-
-### CHECKPOINT 4: Phase 1 Complete
-
-**Final Review Requirements**:
-- All modules integrated and working
-- CI/CD pipeline green on all platforms
-- Security audit passed
-- Documentation complete
-- Ready for Phase 2 to build upon
-
-**Deliverables for Review**:
-- Complete foundation crate
-- 90%+ test coverage report
-- Security analysis document
-- Performance benchmarks
-- Documentation site
-
-## Troubleshooting
-
-### Common Issues
-
-**Atomic Operations Failing on Windows**
-- Cause: Cross-device moves not supported
-- Solution: Implement copy+delete fallback
-
-**Zeroize Not Working**
-- Cause: Compiler optimizations
-- Solution: Use `black_box` to prevent optimization
-
-**Permission Errors on CI**
-- Cause: GitHub Actions filesystem restrictions
-- Solution: Skip permission tests in CI environment
-
-### Debugging Tools
-- `RUST_LOG=debug` - Enable debug logging
-- `cargo expand` - See macro expansions
-- `valgrind` - Verify memory is cleared
-- `strace/procmon` - Debug file operations
+| Operation | Target | Maximum |
+|-----------|--------|---------|
+| Atomic write (1KB) | <5ms | <10ms |
+| Permission set | <1ms | <5ms |
+| Zeroize (1KB) | <0.1ms | <1ms |
+| Config load | <10ms | <20ms |
 
 ## Security Checklist
 
-Before marking any task complete:
+Before completing Phase 1, verify:
 - [ ] No sensitive data in logs
-- [ ] All credentials use secure types
-- [ ] File permissions are restrictive
-- [ ] Error messages don't leak info
-- [ ] Temp files are cleaned up
-- [ ] Memory is zeroized after use
+- [ ] All sensitive strings use SensitiveString
+- [ ] File permissions restrictive by default
+- [ ] Atomic operations truly atomic
+- [ ] Memory zeroization verified
+- [ ] No hardcoded paths or secrets
+
+## Learning Resources
+
+### 📚 Recommended Reading Order
+1. [The Rust Book - Chapter 9: Error Handling](https://doc.rust-lang.org/book/ch09-00-error-handling.html)
+2. [Secure Coding in Rust](https://anssi-fr.github.io/rust-guide/)
+3. [File System Programming](https://riptutorial.com/rust/topic/4080/file-i-o)
+
+### 📖 Additional Tutorials
+- [Rust Error Handling Best Practices](https://doc.rust-lang.org/rust-by-example/error.html)
+- [Understanding Ownership](https://doc.rust-lang.org/book/ch04-00-understanding-ownership.html)
+
+### 💬 Getting Help
+- Post questions in #rust-beginners channel
+- Tag @rust-mentor for pairing sessions
+- Check examples/ directory for working code
 
 ## Next Phase Preview
 
-Phase 2 (Core Profile Management) will build upon this foundation to implement:
-- Profile CRUD operations using secure file system
+Phase 2 will build upon this security foundation to implement:
+- Profile data structures
+- CRUD operations with validation
 - Git configuration management
-- Profile validation and templates
+- Import/export functionality
 
-The secure foundation from Phase 1 ensures all profile operations are safe by default.
+Make sure Phase 1 is solid - everything else depends on it!
 
 ---
 

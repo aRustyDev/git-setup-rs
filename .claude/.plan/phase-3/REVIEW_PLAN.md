@@ -251,7 +251,7 @@ git-setup switch <TAB>
 
 4. **Documentation Quality**
    - User guide complete
-   - Video tutorials
+   - Written tutorials
    - Keyboard reference
    - Troubleshooting guide
 
@@ -285,7 +285,7 @@ git-setup switch <TAB>
 - Mouse support where available
 - Smooth animations
 - All themes working
-- Video tutorial complete
+- Written tutorial complete
 
 ---
 
